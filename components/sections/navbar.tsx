@@ -17,7 +17,7 @@ export default function Navbar() {
 
   const NAV_LINKS = [
     { label: "Explore Studios", href: "/studios" },
-    { label: "How It Works", href: "/#how-it-works" },
+    { label: "How It Works", href: "/how-it-works" },
     { label: "List Your Studio", href: "/list-your-studio" },
   ];
 
