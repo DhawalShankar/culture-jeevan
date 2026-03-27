@@ -103,7 +103,7 @@ export default function Navbar() {
                 (e.currentTarget.style.backgroundColor = "#C4703A")
               }
             >
-              Book a Studio
+              Login
             </Link>
           </div>
         )}
