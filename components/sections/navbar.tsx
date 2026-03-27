@@ -1,10 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const NAV_LINKS = ["Explore Studios", "How It Works", "List Your Studio"];
 
   return (
     <nav
@@ -43,16 +53,9 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Links */}
-        <div
-          style={{
-            display: "flex",
-            gap: "2rem",
-            alignItems: "center",
-          }}
-          className="hidden md:flex"
-        >
-          {["Explore Studios", "How It Works", "List Your Studio"].map(
-            (item) => (
+        {!isMobile && (
+          <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
+            {NAV_LINKS.map((item) => (
               <Link
                 key={item}
                 href="#"
@@ -63,88 +66,88 @@ export default function Navbar() {
                   textDecoration: "none",
                   transition: "color 0.2s",
                 }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.color = "#C4703A")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.color = "#5C4A3A")
-                }
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#C4703A")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#5C4A3A")}
               >
                 {item}
               </Link>
-            )
-          )}
-
-          <a
-            href="#"
-            style={{
-              backgroundColor: "#C4703A",
-              color: "#FAF7F2",
-              padding: "0.5rem 1.25rem",
-              borderRadius: "6px",
-              fontSize: "0.875rem",
-              fontWeight: 600,
-              textDecoration: "none",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#A85C2E")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#C4703A")
-            }
-          >
-            Book a Studio
-          </a>
-        </div>
+            ))}
+            <a
+              href="#"
+              style={{
+                backgroundColor: "#C4703A",
+                color: "#FAF7F2",
+                padding: "0.5rem 1.25rem",
+                borderRadius: "6px",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                textDecoration: "none",
+                transition: "background-color 0.2s",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = "#A85C2E")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "#C4703A")
+              }
+            >
+              Book a Studio
+            </a>
+          </div>
+        )}
 
         {/* Mobile Hamburger */}
-        <button
-          className="md:hidden"
-          onClick={() => setOpen(!open)}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "0.5rem",
-            color: "#1C1410",
-          }}
-          aria-label="Toggle menu"
-        >
-          <div
+        {isMobile && (
+          <button
+            onClick={() => setOpen(!open)}
             style={{
-              width: "22px",
-              height: "2px",
-              backgroundColor: "currentColor",
-              marginBottom: "5px",
-              transition: "0.3s",
-              transform: open ? "rotate(45deg) translate(5px, 5px)" : "none",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "0.5rem",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
             }}
-          />
-          <div
-            style={{
-              width: "22px",
-              height: "2px",
-              backgroundColor: "currentColor",
-              marginBottom: "5px",
-              opacity: open ? 0 : 1,
-              transition: "0.3s",
-            }}
-          />
-          <div
-            style={{
-              width: "22px",
-              height: "2px",
-              backgroundColor: "currentColor",
-              transition: "0.3s",
-              transform: open ? "rotate(-45deg) translate(5px, -5px)" : "none",
-            }}
-          />
-        </button>
+            aria-label="Toggle menu"
+          >
+            <div
+              style={{
+                width: "22px",
+                height: "2px",
+                backgroundColor: "#1C1410",
+                marginBottom: "5px",
+                transition: "transform 0.3s, opacity 0.3s",
+                transform: open ? "rotate(45deg) translate(5px, 5px)" : "none",
+              }}
+            />
+            <div
+              style={{
+                width: "22px",
+                height: "2px",
+                backgroundColor: "#1C1410",
+                marginBottom: "5px",
+                transition: "opacity 0.3s",
+                opacity: open ? 0 : 1,
+              }}
+            />
+            <div
+              style={{
+                width: "22px",
+                height: "2px",
+                backgroundColor: "#1C1410",
+                transition: "transform 0.3s",
+                transform: open
+                  ? "rotate(-45deg) translate(5px, -5px)"
+                  : "none",
+              }}
+            />
+          </button>
+        )}
       </div>
 
-      {/* Mobile Menu */}
-      {open && (
+      {/* Mobile Dropdown */}
+      {isMobile && open && (
         <div
           style={{
             backgroundColor: "#FAF7F2",
@@ -155,22 +158,21 @@ export default function Navbar() {
             gap: "1rem",
           }}
         >
-          {["Explore Studios", "How It Works", "List Your Studio"].map(
-            (item) => (
-              <Link
-                key={item}
-                href="#"
-                style={{
-                  fontSize: "1rem",
-                  fontWeight: 500,
-                  color: "#5C4A3A",
-                  textDecoration: "none",
-                }}
-              >
-                {item}
-              </Link>
-            )
-          )}
+          {NAV_LINKS.map((item) => (
+            <Link
+              key={item}
+              href="#"
+              onClick={() => setOpen(false)}
+              style={{
+                fontSize: "1rem",
+                fontWeight: 500,
+                color: "#5C4A3A",
+                textDecoration: "none",
+              }}
+            >
+              {item}
+            </Link>
+          ))}
           <a
             href="#"
             style={{
