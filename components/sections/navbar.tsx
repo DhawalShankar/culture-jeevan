@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -14,7 +15,11 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const NAV_LINKS = ["Explore Studios", "How It Works", "List Your Studio"];
+  const NAV_LINKS = [
+    { label: "Explore Studios", href: "/studios" },
+    { label: "How It Works", href: "/#how-it-works" },
+    { label: "List Your Studio", href: "/list-your-studio" },
+  ];
 
   return (
     <nav
@@ -38,7 +43,14 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: "none" }}>
+        <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <Image
+            src="/logo.png"
+            alt="CultureJeevan Logo"
+            width={52}
+            height={52}
+            style={{ objectFit: "contain" }}
+          />
           <span
             style={{
               fontFamily: "var(--font-playfair)",
@@ -57,8 +69,8 @@ export default function Navbar() {
           <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
             {NAV_LINKS.map((item) => (
               <Link
-                key={item}
-                href="#"
+                key={item.label}
+                href={item.href}
                 style={{
                   fontSize: "0.9rem",
                   fontWeight: 500,
@@ -69,11 +81,11 @@ export default function Navbar() {
                 onMouseEnter={(e) => (e.currentTarget.style.color = "#C4703A")}
                 onMouseLeave={(e) => (e.currentTarget.style.color = "#5C4A3A")}
               >
-                {item}
+                {item.label}
               </Link>
             ))}
-            <a
-              href="#"
+            <Link
+              href="/studios"
               style={{
                 backgroundColor: "#C4703A",
                 color: "#FAF7F2",
@@ -92,7 +104,7 @@ export default function Navbar() {
               }
             >
               Book a Studio
-            </a>
+            </Link>
           </div>
         )}
 
@@ -137,9 +149,7 @@ export default function Navbar() {
                 height: "2px",
                 backgroundColor: "#1C1410",
                 transition: "transform 0.3s",
-                transform: open
-                  ? "rotate(-45deg) translate(5px, -5px)"
-                  : "none",
+                transform: open ? "rotate(-45deg) translate(5px, -5px)" : "none",
               }}
             />
           </button>
@@ -160,8 +170,8 @@ export default function Navbar() {
         >
           {NAV_LINKS.map((item) => (
             <Link
-              key={item}
-              href="#"
+              key={item.label}
+              href={item.href}
               onClick={() => setOpen(false)}
               style={{
                 fontSize: "1rem",
@@ -170,11 +180,11 @@ export default function Navbar() {
                 textDecoration: "none",
               }}
             >
-              {item}
+              {item.label}
             </Link>
           ))}
-          <a
-            href="#"
+          <Link
+            href="/studios"
             style={{
               backgroundColor: "#C4703A",
               color: "#FAF7F2",
@@ -188,7 +198,7 @@ export default function Navbar() {
             }}
           >
             Book a Studio
-          </a>
+          </Link>
         </div>
       )}
     </nav>

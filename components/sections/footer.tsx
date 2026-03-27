@@ -1,10 +1,33 @@
 "use client";
 
+import Image from "next/image";
+import Link from "next/link";
+
 const FOOTER_LINKS = {
-  Discover: ["Browse Studios", "Cities We Serve", "Studio Types", "New Listings"],
-  Company: ["About Us", "Blog", "Press Kit", "Careers"],
-  Support: ["Help Center", "Contact Us", "Cancellation Policy", "Trust & Safety"],
-  "For Studios": ["List Your Studio", "Studio Owner Guide", "Pricing Plans", "Partner Program"],
+  Discover: [
+    { label: "Browse Studios", href: "/studios" },
+    { label: "Cities We Serve", href: "/studios" },
+    { label: "Studio Types", href: "/studios" },
+    { label: "New Listings", href: "/studios" },
+  ],
+  Company: [
+    { label: "About Us", href: "#" },
+    { label: "Blog", href: "#" },
+    { label: "Press Kit", href: "#" },
+    { label: "Careers", href: "#" },
+  ],
+  Support: [
+    { label: "Help Center", href: "#" },
+    { label: "Contact Us", href: "#" },
+    { label: "Cancellation Policy", href: "#" },
+    { label: "Trust & Safety", href: "#" },
+  ],
+  "For Studios": [
+    { label: "List Your Studio", href: "/list-your-studio" },
+    { label: "Studio Owner Guide", href: "/list-your-studio" },
+    { label: "Pricing Plans", href: "/list-your-studio" },
+    { label: "Partner Program", href: "/list-your-studio" },
+  ],
 };
 
 export default function Footer() {
@@ -29,18 +52,48 @@ export default function Footer() {
         >
           {/* Brand */}
           <div>
-            <p
+            <Link
+              href="/"
               style={{
-                fontFamily: "var(--font-playfair)",
-                fontSize: "1.6rem",
-                fontWeight: 800,
-                color: "#FAF7F2",
+                textDecoration: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
                 marginBottom: "0.875rem",
-                letterSpacing: "-0.02em",
               }}
             >
-              Culture<span style={{ color: "#C4703A" }}>Jeevan</span>
-            </p>
+              <div
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: "8px",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="CultureJeevan Logo"
+                  width={32}
+                  height={32}
+                  style={{ objectFit: "contain" }}
+                />
+              </div>
+              <span
+                style={{
+                  fontFamily: "var(--font-playfair)",
+                  fontSize: "1.6rem",
+                  fontWeight: 800,
+                  color: "#FAF7F2",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Culture<span style={{ color: "#C4703A" }}>Jeevan</span>
+              </span>
+            </Link>
+
             <p
               style={{
                 fontSize: "0.875rem",
@@ -101,11 +154,20 @@ export default function Footer() {
               >
                 {category}
               </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.6rem",
+                }}
+              >
                 {links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
                       style={{
                         fontSize: "0.875rem",
                         color: "#9B7B60",
@@ -119,8 +181,8 @@ export default function Footer() {
                         (e.currentTarget.style.color = "#9B7B60")
                       }
                     >
-                      {link}
-                    </a>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -144,28 +206,22 @@ export default function Footer() {
             © {new Date().getFullYear()} CultureJeevan. All rights reserved.
           </p>
           <div style={{ display: "flex", gap: "1.5rem" }}>
-            {["Privacy Policy", "Terms of Service", "Cookie Policy"].map(
-              (item) => (
-                <a
-                  key={item}
-                  href="#"
-                  style={{
-                    fontSize: "0.82rem",
-                    color: "#5C4030",
-                    textDecoration: "none",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = "#9B7B60")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = "#5C4030")
-                  }
-                >
-                  {item}
-                </a>
-              )
-            )}
+            {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((item) => (
+              <a
+                key={item}
+                href="#"
+                style={{
+                  fontSize: "0.82rem",
+                  color: "#5C4030",
+                  textDecoration: "none",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#9B7B60")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#5C4030")}
+              >
+                {item}
+              </a>
+            ))}
           </div>
         </div>
       </div>

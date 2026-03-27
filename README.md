@@ -206,7 +206,7 @@ Contributions, issues and feature requests are welcome!
 
 ## 📄 License
 
-This project is private and proprietary. All rights reserved © 2025 CultureJeevan.
+This project is private and proprietary. All rights reserved © 2026 CultureJeevan.
 
 ---
 
@@ -214,6 +214,6 @@ This project is private and proprietary. All rights reserved © 2025 CultureJeev
 
 Made with ❤️ in India
 
-**[culturejeevan.com](https://culturejeevan.com)** · [Report Bug](https://github.com/yourusername/culture-jeevan/issues) · [Request Feature](https://github.com/yourusername/culture-jeevan/issues)
+**[culturejeevan.com](https://culturejeevan.co.in)** · [Report Bug](https://github.com/yourusername/culture-jeevan/issues) · [Request Feature](https://github.com/yourusername/culture-jeevan/issues)
 
 </div>
