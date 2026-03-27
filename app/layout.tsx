@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   title: "CultureJeevan — Find & Book Studio Spaces",
   description:
     "Discover and instantly book photography, film, podcast, and creative studios near you. India's largest studio rental marketplace.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/logo.png", type: "image/png" }, // your logo file
+    ],
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +35,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        {/* Favicon with white background */}
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </head>
       <body
         className={`${playfair.variable} ${dmSans.variable} antialiased`}
         style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
@@ -50,4 +63,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+}np
