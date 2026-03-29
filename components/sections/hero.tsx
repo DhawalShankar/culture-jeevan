@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const STUDIO_TYPES = [
   "Photography Studio",
@@ -10,13 +11,17 @@ const STUDIO_TYPES = [
   "Dance Studio",
 ];
 
+const CAFE_AMBIENCE = ["Cosy", "Industrial", "Vintage", "Minimalist", "Outdoor"];
+
 export default function Hero() {
+  const [activeTab, setActiveTab] = useState<"studio" | "cafe">("studio");
   const [location, setLocation] = useState("");
   const [studioType, setStudioType] = useState("");
+  const [cafeAmbience, setCafeAmbience] = useState("");
 
   return (
     <>
-      {/* ── Safety Banner (KEY ADDITION from blueprint) ── */}
+      {/* ── Safety Banner ── */}
       <div
         style={{
           backgroundColor: "#1C1410",
@@ -32,7 +37,7 @@ export default function Hero() {
         <span style={{ color: "#C4703A" }}>
           Bookings outside CultureJeevan are not protected.
         </span>{" "}
-        Always book on platform for verified studios &amp; conflict resolution.
+        Always book on platform for verified spaces &amp; conflict resolution.
       </div>
 
       <section
@@ -72,29 +77,45 @@ export default function Hero() {
           }}
           className="hero-grid"
         >
-          {/* ── LEFT: Copy & Search ── */}
+          {/* ── LEFT ── */}
           <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-            {/* Pill badge */}
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.4rem",
-                backgroundColor: "#F0DCC8",
-                color: "#8B4513",
-                fontSize: "0.78rem",
-                fontWeight: 700,
-                padding: "0.35rem 0.9rem",
-                borderRadius: "100px",
-                width: "fit-content",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-              }}
-            >
-              <span>📸</span> Multiple Studios Across India
-            </span>
 
-            {/* Heading — updated to reflect Scan-to-Shoot model */}
+            {/* Dual category pills */}
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                  backgroundColor: "#F0DCC8", color: "#8B4513",
+                  fontSize: "0.75rem", fontWeight: 700,
+                  padding: "0.35rem 0.9rem", borderRadius: "100px",
+                  letterSpacing: "0.05em", textTransform: "uppercase",
+                }}
+              >
+                🎬 Studios
+              </span>
+              <span
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                  backgroundColor: "#1C1410", color: "#C4703A",
+                  fontSize: "0.75rem", fontWeight: 700,
+                  padding: "0.35rem 0.9rem", borderRadius: "100px",
+                  letterSpacing: "0.05em", textTransform: "uppercase",
+                }}
+              >
+                ☕ Café Venues
+                <span
+                  style={{
+                    backgroundColor: "#C4703A", color: "#FAF7F2",
+                    fontSize: "0.55rem", fontWeight: 800,
+                    padding: "0.1rem 0.35rem", borderRadius: "100px",
+                  }}
+                >
+                  NEW
+                </span>
+              </span>
+            </div>
+
+            {/* Heading — switches with tab */}
             <div>
               <h1
                 style={{
@@ -107,15 +128,24 @@ export default function Hero() {
                   marginBottom: "0.75rem",
                 }}
               >
-                Book a Studio.
-                <br />
-                <span style={{ color: "#C4703A", fontStyle: "italic" }}>
-                  Scan, Shoot,
-                </span>
-                <br />
-                Create.
+                {activeTab === "studio" ? (
+                  <>
+                    Book a Studio.
+                    <br />
+                    <span style={{ color: "#C4703A", fontStyle: "italic" }}>Scan, Shoot,</span>
+                    <br />
+                    Create.
+                  </>
+                ) : (
+                  <>
+                    Shoot Where
+                    <br />
+                    <span style={{ color: "#C4703A", fontStyle: "italic" }}>the Vibe</span>
+                    <br />
+                    is Real.
+                  </>
+                )}
               </h1>
-              {/* Sub-copy updated to explain the full model clearly */}
               <p
                 style={{
                   fontSize: "1.05rem",
@@ -125,12 +155,20 @@ export default function Hero() {
                   fontWeight: 400,
                 }}
               >
-                Discover and instantly book verified studios — photography, film,
-                podcast, rooftop, dance. Pay 50% to secure your slot, scan the
-                QR when you arrive, and settle the rest at the studio.{" "}
-                <strong style={{ color: "#1C1410" }}>
-                  Simple. Transparent. Protected.
-                </strong>
+                {activeTab === "studio" ? (
+                  <>
+                    Discover and instantly book verified studios — photography, film,
+                    podcast, rooftop, dance. Pay 50% to secure your slot, scan the QR
+                    when you arrive, and settle the rest at the studio.{" "}
+                    <strong style={{ color: "#1C1410" }}>Simple. Transparent. Protected.</strong>
+                  </>
+                ) : (
+                  <>
+                    Stop recreating café aesthetics in a studio. Book the actual café —
+                    before it opens or during its quietest hours. Real ambience. Real light.{" "}
+                    <strong style={{ color: "#1C1410" }}>Verified by CultureJeevan.</strong>
+                  </>
+                )}
               </p>
             </div>
 
@@ -147,28 +185,82 @@ export default function Hero() {
                 gap: "1rem",
               }}
             >
+              {/* Tab switcher inside card */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  backgroundColor: "#FAF7F2",
+                  borderRadius: "10px",
+                  padding: "4px",
+                  border: "1px solid #E8DED0",
+                }}
+              >
+                <button
+                  onClick={() => setActiveTab("studio")}
+                  style={{
+                    padding: "0.5rem",
+                    borderRadius: "7px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    fontFamily: "inherit",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.35rem",
+                    backgroundColor: activeTab === "studio" ? "#FFFFFF" : "transparent",
+                    color: activeTab === "studio" ? "#1C1410" : "#9B7B60",
+                    boxShadow: activeTab === "studio" ? "0 1px 6px rgba(0,0,0,0.08)" : "none",
+                  }}
+                >
+                  🎬 Studios
+                </button>
+                <button
+                  onClick={() => setActiveTab("cafe")}
+                  style={{
+                    padding: "0.5rem",
+                    borderRadius: "7px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    fontFamily: "inherit",
+                    transition: "all 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.35rem",
+                    backgroundColor: activeTab === "cafe" ? "#1C1410" : "transparent",
+                    color: activeTab === "cafe" ? "#C4703A" : "#9B7B60",
+                    boxShadow: activeTab === "cafe" ? "0 1px 6px rgba(0,0,0,0.15)" : "none",
+                  }}
+                >
+                  ☕ Café Venues
+                </button>
+              </div>
+
               <p
                 style={{
-                  fontSize: "0.75rem",
+                  fontSize: "0.72rem",
                   fontWeight: 700,
                   color: "#9B7B60",
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
                 }}
               >
-                Find Your Space
+                {activeTab === "studio" ? "Find Your Studio" : "Find Your Café"}
               </p>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* Location — same for both */}
                 <div style={{ position: "relative" }}>
                   <span
                     style={{
-                      position: "absolute",
-                      left: "0.875rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      fontSize: "1rem",
-                      pointerEvents: "none",
+                      position: "absolute", left: "0.875rem", top: "50%",
+                      transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none",
                     }}
                   >
                     📍
@@ -195,92 +287,116 @@ export default function Hero() {
                   />
                 </div>
 
-                <div style={{ position: "relative" }}>
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: "0.875rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      fontSize: "1rem",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    🎬
-                  </span>
-                  <select
-                    value={studioType}
-                    onChange={(e) => setStudioType(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "0.75rem 0.875rem 0.75rem 2.5rem",
-                      border: "1.5px solid #E8DED0",
-                      borderRadius: "10px",
-                      fontSize: "0.9rem",
-                      color: studioType ? "#1C1410" : "#9B7B60",
-                      backgroundColor: "#FAF7F2",
-                      outline: "none",
-                      appearance: "none",
-                      cursor: "pointer",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    <option value="" disabled>
-                      Studio type...
-                    </option>
-                    {STUDIO_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Studio type OR Café ambience */}
+                {activeTab === "studio" ? (
+                  <div style={{ position: "relative" }}>
+                    <span
+                      style={{
+                        position: "absolute", left: "0.875rem", top: "50%",
+                        transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none",
+                      }}
+                    >
+                      🎬
+                    </span>
+                    <select
+                      value={studioType}
+                      onChange={(e) => setStudioType(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem 0.875rem 0.75rem 2.5rem",
+                        border: "1.5px solid #E8DED0",
+                        borderRadius: "10px",
+                        fontSize: "0.9rem",
+                        color: studioType ? "#1C1410" : "#9B7B60",
+                        backgroundColor: "#FAF7F2",
+                        outline: "none",
+                        appearance: "none",
+                        cursor: "pointer",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <option value="" disabled>Studio type...</option>
+                      {STUDIO_TYPES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div style={{ position: "relative" }}>
+                    <span
+                      style={{
+                        position: "absolute", left: "0.875rem", top: "50%",
+                        transform: "translateY(-50%)", fontSize: "1rem", pointerEvents: "none",
+                      }}
+                    >
+                      ☕
+                    </span>
+                    <select
+                      value={cafeAmbience}
+                      onChange={(e) => setCafeAmbience(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem 0.875rem 0.75rem 2.5rem",
+                        border: "1.5px solid #E8DED0",
+                        borderRadius: "10px",
+                        fontSize: "0.9rem",
+                        color: cafeAmbience ? "#1C1410" : "#9B7B60",
+                        backgroundColor: "#FAF7F2",
+                        outline: "none",
+                        appearance: "none",
+                        cursor: "pointer",
+                        boxSizing: "border-box",
+                      }}
+                    >
+                      <option value="" disabled>Café ambience...</option>
+                      {CAFE_AMBIENCE.map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-                <button
+                {/* CTA — routes to correct page */}
+                <Link
+                  href={activeTab === "studio" ? "/studios" : "/cafe-venues"}
                   style={{
                     width: "100%",
                     padding: "0.875rem",
-                    backgroundColor: "#C4703A",
-                    color: "#FAF7F2",
+                    backgroundColor: activeTab === "studio" ? "#C4703A" : "#1C1410",
+                    color: activeTab === "studio" ? "#FAF7F2" : "#C4703A",
                     border: "none",
                     borderRadius: "10px",
                     fontSize: "0.95rem",
                     fontWeight: 700,
                     cursor: "pointer",
                     letterSpacing: "0.02em",
-                    transition: "background-color 0.2s, transform 0.1s",
+                    textDecoration: "none",
+                    textAlign: "center",
+                    display: "block",
+                    transition: "opacity 0.2s",
+                    boxSizing: "border-box",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#A85C2E";
-                    e.currentTarget.style.transform = "scale(1.01)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#C4703A";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.88")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                 >
-                  Search Studios →
-                </button>
+                  {activeTab === "studio" ? "Search Studios →" : "Find a Café →"}
+                </Link>
               </div>
             </div>
 
-            {/* Trust row — added Platform Protected */}
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+            {/* Trust row */}
+            <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
               {[
                 { icon: "⚡", text: "Instant Confirmation" },
                 { icon: "🔐", text: "Secure Payments" },
-                { icon: "✅", text: "Verified Studios" },
+                { icon: "✅", text: "Verified Spaces" },
                 { icon: "🛡️", text: "Platform Protected" },
               ].map((item) => (
                 <div
                   key={item.text}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.4rem",
-                    fontSize: "0.8rem",
-                    color: "#7A5C42",
-                    fontWeight: 500,
+                    display: "flex", alignItems: "center", gap: "0.4rem",
+                    fontSize: "0.8rem", color: "#7A5C42", fontWeight: 500,
                   }}
                 >
                   <span>{item.icon}</span>
@@ -290,7 +406,7 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* ── RIGHT: Image ── */}
+          {/* ── RIGHT: Image (switches with tab) ── */}
           <div
             style={{
               position: "relative",
@@ -301,60 +417,41 @@ export default function Hero() {
           >
             <div
               style={{
-                position: "absolute",
-                right: "-40px",
-                bottom: "-40px",
-                width: "480px",
-                height: "480px",
-                borderRadius: "50%",
-                backgroundColor: "#EDD5B8",
-                zIndex: 0,
+                position: "absolute", right: "-40px", bottom: "-40px",
+                width: "480px", height: "480px", borderRadius: "50%",
+                backgroundColor: "#EDD5B8", zIndex: 0,
               }}
             />
 
-            {/* Float card 1: Studios count */}
+            {/* Float 1 */}
             <div
               style={{
-                position: "absolute",
-                top: "10%",
-                left: "-20px",
-                backgroundColor: "#FFFFFF",
-                border: "1px solid #E8DED0",
-                borderRadius: "14px",
-                padding: "1rem 1.25rem",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-                zIndex: 10,
-                minWidth: "160px",
+                position: "absolute", top: "10%", left: "-20px",
+                backgroundColor: "#FFFFFF", border: "1px solid #E8DED0",
+                borderRadius: "14px", padding: "1rem 1.25rem",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.08)", zIndex: 10, minWidth: "170px",
               }}
             >
               <p
                 style={{
-                  fontFamily: "var(--font-playfair)",
-                  fontSize: "1.8rem",
-                  fontWeight: 800,
-                  color: "#C4703A",
-                  lineHeight: 1,
-                  marginBottom: "0.25rem",
+                  fontFamily: "var(--font-playfair)", fontSize: "1.1rem",
+                  fontWeight: 800, color: "#C4703A", lineHeight: 1.2, marginBottom: "0.25rem",
                 }}
               >
-                Multiple
+                Studios + Cafés
               </p>
-              <p style={{ fontSize: "0.78rem", color: "#7A5C42", fontWeight: 500 }}>
-                Studios Available
+              <p style={{ fontSize: "0.72rem", color: "#7A5C42", fontWeight: 500 }}>
+                Two verticals. One platform.
               </p>
             </div>
 
-            {/* Float card 2: Cities */}
+            {/* Float 2 */}
             <div
               style={{
-                position: "absolute",
-                bottom: "15%",
-                left: "-30px",
-                backgroundColor: "#1C1410",
-                borderRadius: "14px",
+                position: "absolute", bottom: "15%", left: "-30px",
+                backgroundColor: "#1C1410", borderRadius: "14px",
                 padding: "0.875rem 1.25rem",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                zIndex: 10,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15)", zIndex: 10,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -370,67 +467,65 @@ export default function Hero() {
               </div>
             </div>
 
-            {/* Float card 3: Platform Protected (NEW — key trust signal) */}
+            {/* Float 3: Platform Protected */}
             <div
               style={{
-                position: "absolute",
-                bottom: "42%",
-                right: "-20px",
-                backgroundColor: "#0D3B2E",
-                border: "1px solid #1a5c46",
-                borderRadius: "14px",
-                padding: "0.7rem 1rem",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
-                zIndex: 10,
+                position: "absolute", bottom: "42%", right: "-20px",
+                backgroundColor: "#0D3B2E", border: "1px solid #1a5c46",
+                borderRadius: "14px", padding: "0.7rem 1rem",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.15)", zIndex: 10,
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <span style={{ fontSize: "1rem" }}>🛡️</span>
-                <p
-                  style={{
-                    fontSize: "0.72rem",
-                    color: "#7FFFD4",
-                    fontWeight: 700,
-                    lineHeight: 1.3,
-                  }}
-                >
+                <p style={{ fontSize: "0.72rem", color: "#7FFFD4", fontWeight: 700, lineHeight: 1.3 }}>
                   Platform<br />Protected Booking
                 </p>
               </div>
             </div>
 
-            {/* Main image */}
+            {/* Main image — switches with active tab */}
             <div
               style={{
-                position: "relative",
-                zIndex: 5,
-                width: "100%",
-                maxWidth: "500px",
-                aspectRatio: "3/4",
-                borderRadius: "24px",
-                overflow: "hidden",
-                backgroundColor: "#D4B896",
+                position: "relative", zIndex: 5,
+                width: "100%", maxWidth: "500px",
+                aspectRatio: "3/4", borderRadius: "24px",
+                overflow: "hidden", backgroundColor: "#D4B896",
               }}
             >
               <img
-                src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80"
-                alt="Professional cameraman in studio"
+                key={activeTab}
+                src={
+                  activeTab === "studio"
+                    ? "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80"
+                    : "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80"
+                }
+                alt={activeTab === "studio" ? "Professional studio" : "Aesthetic café"}
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  objectPosition: "center top",
+                  width: "100%", height: "100%",
+                  objectFit: "cover", objectPosition: "center top",
                 }}
               />
               <div
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  background:
-                    "linear-gradient(to top, rgba(196,112,58,0.3) 0%, transparent 60%)",
+                  position: "absolute", inset: 0,
+                  background: "linear-gradient(to top, rgba(196,112,58,0.3) 0%, transparent 60%)",
                   pointerEvents: "none",
                 }}
               />
+              {/* Label on image */}
+              <div
+                style={{
+                  position: "absolute", bottom: "1.25rem", left: "1.25rem",
+                  backgroundColor: "rgba(28,20,16,0.75)",
+                  backdropFilter: "blur(8px)",
+                  borderRadius: "100px", padding: "0.35rem 0.875rem",
+                  fontSize: "0.72rem", fontWeight: 700, color: "#FAF7F2",
+                  letterSpacing: "0.04em", textTransform: "uppercase",
+                }}
+              >
+                {activeTab === "studio" ? "🎬 Studio Shoot" : "☕ Café Session"}
+              </div>
             </div>
           </div>
         </div>
