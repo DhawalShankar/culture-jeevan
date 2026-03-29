@@ -50,7 +50,7 @@ const STUDIOS = [
 
 const STUDIO_CATEGORIES = ["All", "Photography", "Film & Video", "Podcast", "Rooftop", "Dance"];
 
-// ── Café Preview Data (teaser on landing page) ────────────────────────────────
+// ── Café Preview Data ─────────────────────────────────────────────────────────
 const CAFES_PREVIEW = [
   {
     name: "The Amber Nook",
@@ -235,279 +235,386 @@ export default function FeaturedStudios() {
       </section>
 
       {/* ══════════════════════════════════════════════
-          SECTION 2 — CAFÉ VENUES TEASER
+          SECTION 2 — SIDE-BY-SIDE: STUDIOS + CAFÉS
       ══════════════════════════════════════════════ */}
-      <section
-        style={{
-          background: "linear-gradient(180deg, #FAF7F2 0%, #0F0A06 120px)",
-          padding: "0 2rem 5rem",
-        }}
-      >
+      <section style={{ backgroundColor: "#1C1410", padding: "5rem 2rem" }}>
         <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
 
-          {/* Divider with label */}
+          {/* ── Visible Divider Label ── */}
           <div
             style={{
-              display: "flex", alignItems: "center", gap: "1rem",
-              marginBottom: "2.5rem", paddingTop: "1rem",
+              display: "flex", alignItems: "center", gap: "1.25rem",
+              marginBottom: "4rem",
             }}
           >
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#E8DED0" }} />
-            <span
+            <div style={{ flex: 1, height: "1px", background: "linear-gradient(to right, transparent, rgba(196,112,58,0.4))" }} />
+            <div
               style={{
-                fontSize: "0.72rem", fontWeight: 700, color: "#9B7B60",
-                letterSpacing: "0.1em", textTransform: "uppercase",
-                whiteSpace: "nowrap",
+                display: "flex", alignItems: "center", gap: "0.5rem",
+                backgroundColor: "rgba(196,112,58,0.12)",
+                border: "1px solid rgba(196,112,58,0.35)",
+                padding: "0.45rem 1.25rem", borderRadius: "100px",
               }}
             >
-              Also on CultureJeevan
-            </span>
-            <div style={{ flex: 1, height: "1px", backgroundColor: "#E8DED0" }} />
+              <span style={{ fontSize: "0.65rem", color: "#E8A870" }}>✦</span>
+              <span
+                style={{
+                  fontSize: "0.72rem", fontWeight: 800, color: "#E8A870",
+                  letterSpacing: "0.12em", textTransform: "uppercase",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Also on CultureJeevan
+              </span>
+              <span style={{ fontSize: "0.65rem", color: "#E8A870" }}>✦</span>
+            </div>
+            <div style={{ flex: 1, height: "1px", background: "linear-gradient(to left, transparent, rgba(196,112,58,0.4))" }} />
           </div>
 
-          {/* Café section header */}
-          <div
-            style={{
-              backgroundColor: "#1C1410",
-              borderRadius: "20px",
-              padding: "2.5rem",
-              marginBottom: "2rem",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: "1.5rem",
-            }}
-          >
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
-                <span
+          {/* ── Two-Column Split ── */}
+          <div className="split-columns" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0", alignItems: "start" }}>
+
+            {/* ══ LEFT: STUDIOS ══ */}
+            <div
+              style={{
+                paddingRight: "3rem",
+                borderRight: "1px solid rgba(255,255,255,0.08)",
+              }}
+              className="split-col"
+            >
+              {/* Studios column header */}
+              <div style={{ marginBottom: "2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+                  <span
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                      backgroundColor: "rgba(250,247,242,0.07)",
+                      color: "#C4B49A",
+                      fontSize: "0.7rem", fontWeight: 700,
+                      padding: "0.3rem 0.85rem", borderRadius: "100px",
+                      letterSpacing: "0.08em", textTransform: "uppercase",
+                      border: "1px solid rgba(250,247,242,0.1)",
+                    }}
+                  >
+                    🎬 Studios
+                  </span>
+                </div>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-playfair)",
+                    fontSize: "clamp(1.4rem, 2.2vw, 1.85rem)",
+                    fontWeight: 900, color: "#FAF7F2",
+                    letterSpacing: "-0.02em", lineHeight: 1.2,
+                    marginBottom: "0.6rem",
+                  }}
+                >
+                  Spaces Built for
+                  <br />
+                  <span style={{ color: "#C4703A", fontStyle: "italic" }}>Serious Creators.</span>
+                </h2>
+                <p style={{ fontSize: "0.85rem", color: "#7A6050", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+                  Photography, film, podcast, rooftop & dance — fully equipped, platform-protected.
+                </p>
+                <Link
+                  href="/studios"
                   style={{
                     display: "inline-flex", alignItems: "center", gap: "0.4rem",
-                    backgroundColor: "rgba(196,112,58,0.15)", color: "#F0A060",
-                    fontSize: "0.72rem", fontWeight: 700,
-                    padding: "0.3rem 0.875rem", borderRadius: "100px",
-                    letterSpacing: "0.06em", textTransform: "uppercase",
-                    border: "1px solid rgba(196,112,58,0.2)",
+                    fontSize: "0.82rem", fontWeight: 700,
+                    color: "#C4703A", textDecoration: "none",
+                    border: "1px solid rgba(196,112,58,0.4)",
+                    padding: "0.45rem 1.1rem", borderRadius: "8px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.12)";
+                    e.currentTarget.style.borderColor = "#C4703A";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.borderColor = "rgba(196,112,58,0.4)";
                   }}
                 >
-                  ☕ Café Venues
-                </span>
-                <span
-                  style={{
-                    backgroundColor: "#C4703A", color: "#FAF7F2",
-                    fontSize: "0.6rem", fontWeight: 800,
-                    padding: "0.15rem 0.5rem", borderRadius: "100px",
-                    letterSpacing: "0.05em", textTransform: "uppercase",
-                  }}
-                >
-                  NEW
-                </span>
+                  View All Studios →
+                </Link>
               </div>
-              <h2
-                style={{
-                  fontFamily: "var(--font-playfair)",
-                  fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
-                  fontWeight: 900, color: "#FAF7F2",
-                  letterSpacing: "-0.02em", lineHeight: 1.15,
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Shoot Where the Vibe is Real.
-              </h2>
-              <p style={{ fontSize: "0.9rem", color: "#9B7B60", lineHeight: 1.7, maxWidth: "500px" }}>
-                Book actual cafés — before they open or during dead hours.
-                Real ambience. Real light. Same platform, same payment protection.
-              </p>
+
+              {/* Studio horizontal list cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                {STUDIOS.map((studio) => (
+                  <Link
+                    key={studio.name}
+                    href="/studios"
+                    style={{
+                      display: "flex", gap: "1rem", alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.035)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: "14px", padding: "0.875rem 1rem",
+                      textDecoration: "none",
+                      transition: "all 0.22s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.07)";
+                      e.currentTarget.style.borderColor = "rgba(196,112,58,0.25)";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.035)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+                      e.currentTarget.style.transform = "translateX(0)";
+                    }}
+                  >
+                    {/* Thumbnail */}
+                    <div
+                      style={{
+                        width: "68px", height: "68px", borderRadius: "10px",
+                        overflow: "hidden", flexShrink: 0, position: "relative",
+                      }}
+                    >
+                      <img
+                        src={studio.image}
+                        alt={studio.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                        <p
+                          style={{
+                            fontFamily: "var(--font-playfair)",
+                            fontSize: "0.95rem", fontWeight: 800,
+                            color: "#FAF7F2", marginBottom: "0.15rem",
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          }}
+                        >
+                          {studio.name}
+                        </p>
+                        <p style={{ fontSize: "0.9rem", fontWeight: 800, color: "#C4703A", flexShrink: 0 }}>
+                          ₹{studio.price.toLocaleString()}
+                          <span style={{ fontSize: "0.63rem", color: "#7A6050", fontWeight: 400 }}>/hr</span>
+                        </p>
+                      </div>
+                      <p style={{ fontSize: "0.72rem", color: "#7A6050", marginBottom: "0.5rem" }}>
+                        📍 {studio.city}
+                      </p>
+                      <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap" }}>
+                        {studio.tags.slice(0, 2).map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              backgroundColor: "rgba(255,255,255,0.05)",
+                              color: "#9B8070",
+                              fontSize: "0.62rem", fontWeight: 600,
+                              padding: "0.15rem 0.45rem", borderRadius: "5px",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9B8070", alignSelf: "center" }}>
+                          ⭐ {studio.rating}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-            <Link
-              href="/cafe-venues"
-              style={{
-                backgroundColor: "#C4703A", color: "#FAF7F2",
-                padding: "0.75rem 1.75rem", borderRadius: "10px",
-                fontSize: "0.9rem", fontWeight: 700, textDecoration: "none",
-                whiteSpace: "nowrap", flexShrink: 0,
-                transition: "background-color 0.2s",
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#A85C2E")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#C4703A")}
-            >
-              Explore Cafés →
-            </Link>
-          </div>
 
-          {/* Café cards preview */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))",
-              gap: "1.25rem",
-            }}
-          >
-            {CAFES_PREVIEW.map((cafe) => (
-              <Link
-                key={cafe.name}
-                href="/cafe-venues"
-                style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: "18px",
-                  overflow: "hidden",
-                  border: "1px solid #E8DED0",
-                  textDecoration: "none",
-                  display: "block",
-                  transition: "transform 0.25s, box-shadow 0.25s",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-4px)";
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 16px 48px rgba(28,20,16,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
-                }}
-              >
-                {/* Image */}
-                <div style={{ position: "relative", height: "180px", overflow: "hidden" }}>
-                  <img
-                    src={cafe.image}
-                    alt={cafe.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute", inset: 0,
-                      background: "linear-gradient(to top, rgba(28,20,16,0.5) 0%, transparent 50%)",
-                    }}
-                  />
-                  {/* Ambience badge */}
+            {/* ══ RIGHT: CAFÉS ══ */}
+            <div
+              style={{ paddingLeft: "3rem" }}
+              className="split-col"
+            >
+              {/* Cafés column header */}
+              <div style={{ marginBottom: "2rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
                   <span
                     style={{
-                      position: "absolute", top: "0.75rem", left: "0.75rem",
-                      backgroundColor: "rgba(28,20,16,0.75)",
-                      color: "#FAF7F2", fontSize: "0.65rem", fontWeight: 700,
+                      display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                      backgroundColor: "rgba(196,112,58,0.12)",
+                      color: "#F0A060",
+                      fontSize: "0.7rem", fontWeight: 700,
+                      padding: "0.3rem 0.85rem", borderRadius: "100px",
+                      letterSpacing: "0.08em", textTransform: "uppercase",
+                      border: "1px solid rgba(196,112,58,0.2)",
+                    }}
+                  >
+                    ☕ Café Venues
+                  </span>
+                  <span
+                    style={{
+                      backgroundColor: "#C4703A", color: "#FAF7F2",
+                      fontSize: "0.58rem", fontWeight: 800,
+                      padding: "0.15rem 0.5rem", borderRadius: "100px",
                       letterSpacing: "0.06em", textTransform: "uppercase",
-                      padding: "0.25rem 0.625rem", borderRadius: "100px",
-                      backdropFilter: "blur(4px)",
                     }}
                   >
-                    {cafe.ambience}
-                  </span>
-                  {/* Slot badge */}
-                  <span
-                    style={{
-                      position: "absolute", top: "0.75rem", right: "0.75rem",
-                      backgroundColor: cafe.slotColor,
-                      color: "#FAF7F2", fontSize: "0.62rem", fontWeight: 700,
-                      padding: "0.25rem 0.5rem", borderRadius: "100px",
-                    }}
-                  >
-                    {cafe.slotLabel === "Before-Hours" ? "🌅" : "🕙"} {cafe.slotLabel}
-                  </span>
-                  {/* Light */}
-                  <span
-                    style={{
-                      position: "absolute", bottom: "0.75rem", left: "0.75rem",
-                      backgroundColor: "rgba(250,247,242,0.15)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid rgba(250,247,242,0.2)",
-                      color: "#FAF7F2", fontSize: "0.65rem", fontWeight: 600,
-                      padding: "0.2rem 0.5rem", borderRadius: "100px",
-                    }}
-                  >
-                    ☀️ {cafe.light}
+                    NEW
                   </span>
                 </div>
+                <h2
+                  style={{
+                    fontFamily: "var(--font-playfair)",
+                    fontSize: "clamp(1.4rem, 2.2vw, 1.85rem)",
+                    fontWeight: 900, color: "#FAF7F2",
+                    letterSpacing: "-0.02em", lineHeight: 1.2,
+                    marginBottom: "0.6rem",
+                  }}
+                >
+                  Shoot Where the
+                  <br />
+                  <span style={{ color: "#C4703A", fontStyle: "italic" }}>Vibe is Real.</span>
+                </h2>
+                <p style={{ fontSize: "0.85rem", color: "#7A6050", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+                  Book actual cafés before they open or during dead hours. Real ambience. Real light.
+                </p>
+                <Link
+                  href="/cafe-venues"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                    fontSize: "0.82rem", fontWeight: 700,
+                    backgroundColor: "#C4703A", color: "#FAF7F2",
+                    textDecoration: "none",
+                    padding: "0.45rem 1.1rem", borderRadius: "8px",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#A85C2E")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#C4703A")}
+                >
+                  Explore Cafés →
+                </Link>
+              </div>
 
-                {/* Body */}
-                <div style={{ padding: "1.1rem" }}>
-                  <div
+              {/* Café cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
+                {CAFES_PREVIEW.map((cafe) => (
+                  <Link
+                    key={cafe.name}
+                    href="/cafe-venues"
                     style={{
-                      display: "flex", justifyContent: "space-between",
-                      alignItems: "flex-start", marginBottom: "0.2rem",
+                      display: "flex", gap: "1rem", alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.035)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                      borderRadius: "14px", padding: "0.875rem 1rem",
+                      textDecoration: "none",
+                      transition: "all 0.22s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.07)";
+                      e.currentTarget.style.borderColor = "rgba(196,112,58,0.25)";
+                      e.currentTarget.style.transform = "translateX(4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.035)";
+                      e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+                      e.currentTarget.style.transform = "translateX(0)";
                     }}
                   >
-                    <p
+                    {/* Thumbnail with slot badge */}
+                    <div
                       style={{
-                        fontFamily: "var(--font-playfair)",
-                        fontSize: "1rem", fontWeight: 800, color: "#1C1410",
+                        width: "68px", height: "68px", borderRadius: "10px",
+                        overflow: "hidden", flexShrink: 0, position: "relative",
                       }}
                     >
-                      {cafe.name}
-                    </p>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-playfair)",
-                        fontSize: "0.95rem", fontWeight: 800, color: "#C4703A",
-                      }}
-                    >
-                      ₹{cafe.price}
-                      <span style={{ fontSize: "0.68rem", color: "#9B7B60", fontWeight: 400 }}>/hr</span>
-                    </p>
-                  </div>
-                  <p style={{ fontSize: "0.75rem", color: "#9B7B60", marginBottom: "0.75rem" }}>
-                    📍 {cafe.city}
-                  </p>
-                  <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", marginBottom: "0.875rem" }}>
-                    {cafe.tags.map((tag) => (
+                      <img
+                        src={cafe.image}
+                        alt={cafe.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                      {/* Slot dot overlay */}
                       <span
-                        key={tag}
                         style={{
-                          backgroundColor: "#FAF7F2", color: "#6B5240",
-                          fontSize: "0.65rem", fontWeight: 600,
-                          padding: "0.2rem 0.5rem", borderRadius: "6px",
-                          border: "1px solid #E8DED0",
+                          position: "absolute", top: "5px", right: "5px",
+                          width: "8px", height: "8px", borderRadius: "50%",
+                          backgroundColor: cafe.slotColor,
+                          boxShadow: "0 0 0 1.5px rgba(0,0,0,0.4)",
                         }}
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  <div
-                    style={{
-                      display: "flex", justifyContent: "space-between", alignItems: "center",
-                    }}
-                  >
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1C1410" }}>
-                      ⭐ {cafe.rating}{" "}
-                      <span style={{ color: "#9B7B60", fontWeight: 400 }}>({cafe.reviewCount})</span>
-                    </span>
-                    <span
-                      style={{
-                        fontSize: "0.72rem", fontWeight: 700, color: "#C4703A",
-                        display: "flex", alignItems: "center", gap: "0.25rem",
-                      }}
-                    >
-                      {cafe.access === "Exclusive" ? "🔒" : "👥"} {cafe.access}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                      />
+                    </div>
 
-          {/* See all cafés CTA */}
-          <div style={{ textAlign: "center", marginTop: "2rem" }}>
-            <Link
-              href="/cafe-venues"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                color: "#C4703A", textDecoration: "none",
-                fontSize: "0.9rem", fontWeight: 700,
-                border: "1.5px solid rgba(196,112,58,0.3)",
-                padding: "0.625rem 1.5rem", borderRadius: "100px",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.08)";
-                e.currentTarget.style.borderColor = "#C4703A";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-                e.currentTarget.style.borderColor = "rgba(196,112,58,0.3)";
-              }}
-            >
-              ☕ See All Café Venues →
-            </Link>
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                        <p
+                          style={{
+                            fontFamily: "var(--font-playfair)",
+                            fontSize: "0.95rem", fontWeight: 800,
+                            color: "#FAF7F2", marginBottom: "0.15rem",
+                            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                          }}
+                        >
+                          {cafe.name}
+                        </p>
+                        <p style={{ fontSize: "0.9rem", fontWeight: 800, color: "#C4703A", flexShrink: 0 }}>
+                          ₹{cafe.price.toLocaleString()}
+                          <span style={{ fontSize: "0.63rem", color: "#7A6050", fontWeight: 400 }}>/hr</span>
+                        </p>
+                      </div>
+                      <p style={{ fontSize: "0.72rem", color: "#7A6050", marginBottom: "0.5rem" }}>
+                        📍 {cafe.city}
+                      </p>
+                      <div style={{ display: "flex", gap: "0.3rem", flexWrap: "wrap", alignItems: "center" }}>
+                        {cafe.tags.slice(0, 2).map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              backgroundColor: "rgba(255,255,255,0.05)",
+                              color: "#9B8070",
+                              fontSize: "0.62rem", fontWeight: 600,
+                              padding: "0.15rem 0.45rem", borderRadius: "5px",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        <span
+                          style={{
+                            fontSize: "0.62rem", fontWeight: 700,
+                            color: "#FAF7F2",
+                            backgroundColor: cafe.slotColor,
+                            padding: "0.15rem 0.45rem", borderRadius: "5px",
+                            opacity: 0.9,
+                          }}
+                        >
+                          {cafe.slotLabel === "Before-Hours" ? "🌅" : "🕙"} {cafe.slotLabel}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* See all CTA */}
+              <div style={{ marginTop: "1.5rem", textAlign: "right" }}>
+                <Link
+                  href="/cafe-venues"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                    color: "#C4703A", textDecoration: "none",
+                    fontSize: "0.82rem", fontWeight: 700,
+                    border: "1px solid rgba(196,112,58,0.3)",
+                    padding: "0.45rem 1.1rem", borderRadius: "100px",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.1)";
+                    e.currentTarget.style.borderColor = "#C4703A";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.borderColor = "rgba(196,112,58,0.3)";
+                  }}
+                >
+                  ☕ See All Café Venues →
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -599,8 +706,16 @@ export default function FeaturedStudios() {
         </div>
 
         <style>{`
-          @media (max-width: 768px) {
+          @media (max-width: 900px) {
             .why-grid { grid-template-columns: 1fr !important; }
+            .split-columns { grid-template-columns: 1fr !important; }
+            .split-col:first-child {
+              padding-right: 0 !important;
+              border-right: none !important;
+              padding-bottom: 3rem;
+              border-bottom: 1px solid rgba(255,255,255,0.08);
+            }
+            .split-col:last-child { padding-left: 0 !important; padding-top: 3rem; }
           }
         `}</style>
       </section>
