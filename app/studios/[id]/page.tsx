@@ -1,30 +1,18 @@
-import Navbar from "@/components/sections/navbar";
+import type { Metadata } from "next";
 import StudioDetail from "@/components/sections/studio-detail";
-import Footer from "@/components/sections/footer";
 
-export const metadata = {
-  title: "Studio Detail — CultureJeevan",
-  description: "View studio details, amenities, and book your slot instantly.",
-};
+// ✅ Dynamic metadata yahin likhna hai
+export async function generateMetadata({ params }: { params: { id: string } }) {
+  return {
+    title: `Studio ${params.id} — CultureJeevan`,
+    description: "View studio details, amenities, and book instantly.",
+  };
+}
 
-export default function StudioDetailPage({
+export default function Page({
   params,
 }: {
   params: { id: string };
 }) {
-  return (
-    <main
-      style={{
-        backgroundColor: "#FAF7F2",
-        color: "#1C1410",
-        minHeight: "100vh",
-        margin: 0,
-        padding: 0,
-      }}
-    >
-      <Navbar />
-      <StudioDetail id={params.id} />
-      <Footer />
-    </main>
-  );
+  return <StudioDetail id={params.id} />;
 }

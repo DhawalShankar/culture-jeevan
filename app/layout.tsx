@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import Script from "next/script";
+import Navbar from "@/components/sections/navbar";
+import Footer from "@/components/sections/footer";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -18,34 +20,33 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "CultureJeevan — Find & Book Studio Spaces",
   description:
-    "Discover and instantly book photography, film, podcast, and creative studios near you. India's largest studio rental marketplace.",
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/logo.png", type: "image/png" }, // your logo file
-    ],
-    apple: "/logo.png",
-  },
+    "Discover and instantly book photography, film, podcast, and creative studios near you.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <head>
-        {/* Favicon with white background */}
-        <link rel="icon" href="/logo.png" type="image/png" />
-        <link rel="shortcut icon" href="/logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo.png" />
-      </head>
       <body
         className={`${playfair.variable} ${dmSans.variable} antialiased`}
-        style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
+        style={{
+          fontFamily: "var(--font-dm-sans), sans-serif",
+          backgroundColor: "#FAF7F2",
+          color: "#1C1410",
+          margin: 0,
+          padding: 0,
+        }}
       >
-        {children}
+        <Navbar />
+
+        <main style={{ minHeight: "100vh" }}>
+          {children}
+        </main>
+
+        <Footer />
 
         {/* Google Analytics */}
         <Script
@@ -62,4 +63,5 @@ export default function RootLayout({
         </Script>
       </body>
     </html>
-  );}
+  );
+}
