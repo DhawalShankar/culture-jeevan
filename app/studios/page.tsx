@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import StudiosListing from "@/components/sections/studios-listing";
-
+import ComingSoon from "@/components/sections/coming-soon";
 export const metadata: Metadata = {
   title: "Explore Studios — CultureJeevan",
   description:
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <StudiosListing />;
+  return <ComingSoon/>;
 }

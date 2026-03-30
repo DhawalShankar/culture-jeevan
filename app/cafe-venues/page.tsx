@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CafeVenues from "@/components/sections/cafe-venues";
+import ComingSoon from "@/components/sections/coming-soon";
 
 export const metadata: Metadata = {
   title: "Cafe Venues — CultureJeevan",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <CafeVenues />;
+  return <ComingSoon />;
 }

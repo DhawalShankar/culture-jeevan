@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import StudioDetail from "@/components/sections/studio-detail";
-
+import ComingSoon from "@/components/sections/coming-soon";
 // ✅ Dynamic metadata yahin likhna hai
 export async function generateMetadata({ params }: { params: { id: string } }) {
   return {
@@ -14,5 +14,6 @@ export default function Page({
 }: {
   params: { id: string };
 }) {
-  return <StudioDetail id={params.id} />;
+  // return <StudioDetail id={params.id} />;
+  return <ComingSoon />
 }
