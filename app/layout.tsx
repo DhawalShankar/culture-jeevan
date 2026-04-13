@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import Script from "next/script";
+import { ClerkProvider } from "@clerk/nextjs";
 import Navbar from "@/components/sections/navbar";
 import Footer from "@/components/sections/footer";
 import "./globals.css";
@@ -29,39 +30,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`${playfair.variable} ${dmSans.variable} antialiased`}
-        style={{
-          fontFamily: "var(--font-dm-sans), sans-serif",
-          backgroundColor: "#FAF7F2",
-          color: "#1C1410",
-          margin: 0,
-          padding: 0,
-        }}
-      >
-        <Navbar />
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${playfair.variable} ${dmSans.variable} antialiased`}
+          style={{
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            backgroundColor: "#FAF7F2",
+            color: "#1C1410",
+            margin: 0,
+            padding: 0,
+          }}
+        >
+          <Navbar />
 
-        <main style={{ minHeight: "100vh" }}>
-          {children}
-        </main>
+          <main style={{ minHeight: "100vh" }}>
+            {children}
+          </main>
 
-        <Footer />
+          <Footer />
 
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-BTVN828MXV"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-BTVN828MXV');
-          `}
-        </Script>
-      </body>
-    </html>
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-BTVN828MXV"
+            strategy="afterInteractive"
+          />
+          <Script id="google-analytics" strategy="afterInteractive">
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-BTVN828MXV');
+            `}
+          </Script>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
