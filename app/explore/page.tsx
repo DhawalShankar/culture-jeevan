@@ -86,6 +86,15 @@ const EQUIPMENT_CATEGORIES = [
   "Power / Battery", "Backdrop / Props", "Other",
 ];
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// Derive a display name from profile data — never shows null/"—"/"Unknown"
+function displayName(fullName: string | null | undefined, email?: string | null): string {
+  if (fullName && fullName.trim()) return fullName.trim();
+  if (email) return email.split("@")[0];
+  return "Creator";
+}
+
 // ─── Shared Styles ────────────────────────────────────────────────────────────
 
 const SELECT_ARROW = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239B7B60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`;
@@ -198,23 +207,27 @@ function CreatorsSection() {
   const [city, setCity] = useState("");
   const [sort, setSort] = useState("rating");
 
-  const fetch = useCallback(async () => {
+  const fetchCreators = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     let q = supabase
       .from("creators")
-      .select(`id, profile_id, category, starting_price, experience, languages,
+      .select(`
+        id, profile_id, category, starting_price, experience, languages,
         review_count, avg_rating, badge, is_premium,
-        profiles(full_name, city, bio, instagram_handle, portfolio_url)`)
+        profiles(full_name, email, city, bio, instagram_handle, portfolio_url)
+      `)
       .order("is_premium", { ascending: false })
       .order("review_count", { ascending: false });
 
     if (category) q = q.eq("category", category);
 
     const { data } = await q;
+
     let list: Creator[] = (data ?? []).map((r: any) => ({
       ...r,
-      full_name: r.profiles?.full_name ?? "—",
+      // ✅ Never show "—" — use email fallback, then generic
+      full_name: displayName(r.profiles?.full_name, r.profiles?.email),
       city: r.profiles?.city ?? null,
       bio: r.profiles?.bio ?? null,
       instagram_handle: r.profiles?.instagram_handle ?? null,
@@ -229,9 +242,10 @@ function CreatorsSection() {
     setLoading(false);
   }, [category, city, sort]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchCreators(); }, [fetchCreators]);
 
-  const initials = (name: string) => name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = (name: string) =>
+    name.split(" ").map((w) => w[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "CR";
   const avatarColors = ["#C4703A", "#7A5C42", "#9B7B60", "#5C3D2E", "#8B6B4A"];
   const avatarColor = (name: string) => avatarColors[name.charCodeAt(0) % avatarColors.length];
 
@@ -290,12 +304,17 @@ function CreatorsSection() {
                   {initials(c.full_name)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1C1410", margin: "0 0 0.2rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <p style={{
+                    fontWeight: 800, fontSize: "0.9rem", color: "#1C1410",
+                    margin: "0 0 0.2rem", whiteSpace: "nowrap",
+                    overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
                     {c.full_name}
                   </p>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
                     {c.is_premium && <Pill orange>✦ Premium</Pill>}
-                    {c.badge && !c.is_premium && <Pill>{c.badge}</Pill>}
+                    {/* ✅ Only show badge pill if badge is not null/none */}
+                    {c.badge && c.badge !== "none" && !c.is_premium && <Pill>{c.badge}</Pill>}
                   </div>
                 </div>
               </div>
@@ -315,7 +334,9 @@ function CreatorsSection() {
                 )}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontSize: "0.72rem", color: "#9B7B60" }}>
-                    {c.city ?? "—"} {c.experience ? `· ${c.experience}` : ""}
+                    {c.city ?? ""}
+                    {c.city && c.experience ? " · " : ""}
+                    {c.experience ?? ""}
                   </span>
                   {c.starting_price ? (
                     <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#1C1410" }}>
@@ -343,15 +364,17 @@ function SpacesSection() {
   const [city, setCity] = useState("");
   const [spaceType, setSpaceType] = useState("");
 
-  const fetch = useCallback(async () => {
+  const fetchSpaces = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     let q = supabase
       .from("spaces")
-      .select(`id, profile_id, space_name, space_type, space_category,
+      .select(`
+        id, profile_id, space_name, space_type, space_category,
         address_area, address_city, hourly_rate, capacity, amenities,
         avg_rating, review_count, badge, is_premium, is_cj_certified,
-        space_description, profiles(full_name)`)
+        space_description, profiles(full_name, email)
+      `)
       .order("is_premium", { ascending: false })
       .order("review_count", { ascending: false });
 
@@ -366,16 +389,16 @@ function SpacesSection() {
     const { data } = await q;
     setSpaces((data ?? []).map((r: any) => ({
       ...r,
-      owner_name: r.profiles?.full_name ?? "Unknown",
+      // ✅ Never show "Unknown"
+      owner_name: displayName(r.profiles?.full_name, r.profiles?.email),
       amenities: r.amenities ?? [],
     })));
     setLoading(false);
   }, [tab, city, spaceType]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchSpaces(); }, [fetchSpaces]);
 
   const studioTypes = SPACE_TYPES.filter((t) => t !== "Aesthetic Café");
-  const cafeTypes = ["Aesthetic Café"];
 
   return (
     <section style={{ marginBottom: "3.5rem" }}>
@@ -406,7 +429,9 @@ function SpacesSection() {
       <FilterBar>
         <select style={sel} value={spaceType} onChange={(e) => setSpaceType(e.target.value)}>
           <option value="">All Types</option>
-          {(tab === "studio" ? studioTypes : cafeTypes).map((s) => <option key={s} value={s}>{s}</option>)}
+          {(tab === "studio" ? studioTypes : ["Aesthetic Café"]).map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
         </select>
         <select style={sel} value={city} onChange={(e) => setCity(e.target.value)}>
           <option value="">All Cities</option>
@@ -442,7 +467,10 @@ function SpacesSection() {
                 borderBottom: "1px solid #F0E8DC",
                 background: "linear-gradient(135deg, rgba(196,112,58,0.04), transparent)",
               }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.4rem" }}>
+                <div style={{
+                  display: "flex", alignItems: "flex-start",
+                  justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.4rem",
+                }}>
                   <p style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1C1410", margin: 0, lineHeight: 1.3 }}>
                     {s.space_name}
                   </p>
@@ -475,7 +503,9 @@ function SpacesSection() {
                       }}>{a}</span>
                     ))}
                     {s.amenities.length > 4 && (
-                      <span style={{ fontSize: "0.62rem", color: "#9B7B60" }}>+{s.amenities.length - 4} more</span>
+                      <span style={{ fontSize: "0.62rem", color: "#9B7B60" }}>
+                        +{s.amenities.length - 4} more
+                      </span>
                     )}
                   </div>
                 )}
@@ -511,14 +541,16 @@ function EquipmentSection() {
   const [city, setCity] = useState("");
   const [availableOnly, setAvailableOnly] = useState(false);
 
-  const fetch = useCallback(async () => {
+  const fetchEquipment = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
     let q = supabase
       .from("equipment")
-      .select(`id, profile_id, name, brand, category, price_per_day, price_per_hour,
+      .select(`
+        id, profile_id, name, brand, category, price_per_day, price_per_hour,
         condition, description, pickup_area, pickup_city, is_available,
-        profiles(full_name)`)
+        profiles(full_name, email)
+      `)
       .order("is_available", { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -529,12 +561,13 @@ function EquipmentSection() {
     const { data } = await q;
     setEquipment((data ?? []).map((r: any) => ({
       ...r,
-      owner_name: r.profiles?.full_name ?? "Unknown",
+      // ✅ Never show "Unknown"
+      owner_name: displayName(r.profiles?.full_name, r.profiles?.email),
     })));
     setLoading(false);
   }, [category, city, availableOnly]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchEquipment(); }, [fetchEquipment]);
 
   const conditionColor = (c: string | null) => {
     if (c === "Brand New" || c === "Like New") return "#2E7D32";
@@ -597,7 +630,10 @@ function EquipmentSection() {
                 borderBottom: "1px solid #F0E8DC",
                 background: "linear-gradient(135deg, rgba(196,112,58,0.03), transparent)",
               }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.35rem" }}>
+                <div style={{
+                  display: "flex", alignItems: "flex-start",
+                  justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.35rem",
+                }}>
                   <p style={{ fontWeight: 800, fontSize: "0.9rem", color: "#1C1410", margin: 0, lineHeight: 1.3 }}>
                     {e.name}
                   </p>
@@ -629,16 +665,18 @@ function EquipmentSection() {
                   <div style={{ fontSize: "0.72rem", color: "#9B7B60" }}>
                     📍 {[e.pickup_area, e.pickup_city].filter(Boolean).join(", ") || "—"}
                     {e.condition && (
-                      <span style={{ color: conditionColor(e.condition), fontWeight: 700 }}> · {e.condition}</span>
+                      <span style={{ color: conditionColor(e.condition), fontWeight: 700 }}>
+                        {" "}· {e.condition}
+                      </span>
                     )}
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    {e.price_per_day && (
+                    {e.price_per_day != null && (
                       <p style={{ fontSize: "0.82rem", fontWeight: 800, color: "#1C1410", margin: 0 }}>
                         ₹{e.price_per_day.toLocaleString("en-IN")}/day
                       </p>
                     )}
-                    {e.price_per_hour && (
+                    {e.price_per_hour != null && (
                       <p style={{ fontSize: "0.68rem", color: "#9B7B60", margin: 0 }}>
                         ₹{e.price_per_hour.toLocaleString("en-IN")}/hr
                       </p>
@@ -646,7 +684,8 @@ function EquipmentSection() {
                   </div>
                 </div>
                 <div style={{ marginTop: "0.6rem", fontSize: "0.7rem", color: "#9B7B60" }}>
-                  Listed by <span style={{ color: "#7A5C42", fontWeight: 600 }}>{e.owner_name}</span>
+                  Listed by{" "}
+                  <span style={{ color: "#7A5C42", fontWeight: 600 }}>{e.owner_name}</span>
                 </div>
               </div>
             </div>

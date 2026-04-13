@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import StudioDetail from "@/components/sections/studio-detail";
+import CreatorDetail from "@/components/sections/creator-detail";
 
 // Next.js 15: params is a Promise — must be awaited in both generateMetadata and Page
 export async function generateMetadata({
@@ -9,8 +9,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   return {
-    title: `Studio ${id} — CultureJeevan`,
-    description: "View studio details, amenities, and book instantly.",
+    title: `Creator ${id} — CultureJeevan`,
+    description: "View creator details, skills, and book instantly.",
   };
 }
 
@@ -20,5 +20,5 @@ export default async function Page({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <StudioDetail id={id} />;
+  return <CreatorDetail id={id} />;
 }

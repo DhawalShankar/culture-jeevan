@@ -60,7 +60,7 @@ export default function Hero() {
 
       {/* Protection Banner */}
       <div style={{
-        background: "#fff1cc",
+        background: "#fff0b5",
         borderBottom: "1px solid rgba(45,36,30,0.08)",
         padding: "0.45rem 2rem",
         display: "flex",
@@ -76,12 +76,27 @@ export default function Hero() {
             strokeLinejoin="round"
           />
         </svg>
-        <span className="font-bold" style={{ fontSize: "0.7rem", color: "#5C544E", letterSpacing: "0.03em" }}>
-          All bookings are platform-protected. For your security,
-        </span>
-        <span style={{ fontSize: "0.7rem", color: "#A65D2E", fontWeight: 700, letterSpacing: "0.03em" }}>
-          always transact on CultureJeevan.
-        </span>
+          <span
+            className="font-bold"
+            style={{
+              fontSize: "0.7rem",
+              color: "#3E3A36", // darker grey-brown
+              letterSpacing: "0.03em"
+            }}
+          >
+            All bookings are platform-protected. For your security,
+          </span>
+
+          <span
+            style={{
+              fontSize: "0.7rem",
+              color: "#7A3E1D", // darker, richer brown-orange
+              fontWeight: 700,
+              letterSpacing: "0.03em"
+            }}
+          >
+            always transact on CultureJeevan.
+          </span>
       </div>
 
       {/* Hero */}

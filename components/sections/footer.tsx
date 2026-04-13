@@ -7,7 +7,7 @@ const FOOTER_LINKS = {
     { label: "Book a Creator", href: "/creators" },
     { label: "Book a Space", href: "/spaces" },
     { label: "Rent Equipment", href: "/equipment" },
-    { label: "List Your Profile", href: "/list" },
+    { label: "List Your Profile", href: "/profile" },
   ],
   Support: [
     { label: "Help Center", href: "/help" },

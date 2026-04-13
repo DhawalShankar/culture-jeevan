@@ -18,19 +18,8 @@ export interface EquipmentItem {
   description: string;
 }
 
-export interface ProfileData {
-  phone: string;
-  city: string;
-  bio: string;
-  instagramHandle: string;
-  portfolioUrl: string;
-  isCreator: boolean;
-  creatorCategory: string;
-  startingPrice: string;
-  experience: string;
-  languages: string;
-  isSpace: boolean;
-  spaceId: string;
+export interface SpaceItem {
+  id: string;
   spaceName: string;
   spaceType: string;
   addressLine1: string;
@@ -46,6 +35,21 @@ export interface ProfileData {
   amenities: string[];
   spaceRules: string;
   spaceDescription: string;
+}
+
+export interface ProfileData {
+  phone: string;
+  city: string;
+  bio: string;
+  instagramHandle: string;
+  portfolioUrl: string;
+  isCreator: boolean;
+  creatorCategory: string;
+  startingPrice: string;
+  experience: string;
+  languages: string;
+  isSpace: boolean;
+  spaces: SpaceItem[];
   isEquipment: boolean;
   equipmentPhone: string;
   equipmentAddressLine: string;
@@ -102,13 +106,19 @@ const EMPTY_EQUIPMENT = (): EquipmentItem => ({
   condition: "", description: "",
 });
 
+const EMPTY_SPACE = (): SpaceItem => ({
+  id: Math.random().toString(36).slice(2),
+  spaceName: "", spaceType: "",
+  addressLine1: "", addressArea: "", addressCity: "", pincode: "", googleMapsUrl: "",
+  hourlyRate: "", halfDayRate: "", fullDayRate: "",
+  capacity: "", minBookingHours: "",
+  amenities: [], spaceRules: "", spaceDescription: "",
+});
+
 const INITIAL_DATA: ProfileData = {
   phone: "", city: "", bio: "", instagramHandle: "", portfolioUrl: "",
   isCreator: false, creatorCategory: "", startingPrice: "", experience: "", languages: "",
-  isSpace: false, spaceName: "", spaceType: "", spaceId: "",
-  addressLine1: "", addressArea: "", addressCity: "", pincode: "", googleMapsUrl: "",
-  hourlyRate: "", halfDayRate: "", fullDayRate: "",
-  capacity: "", minBookingHours: "", amenities: [], spaceRules: "", spaceDescription: "",
+  isSpace: false, spaces: [],
   isEquipment: false, equipmentPhone: "", equipmentAddressLine: "",
   equipmentArea: "", equipmentCity: "", equipmentPincode: "",
   equipment: [],
@@ -146,17 +156,28 @@ const lbl: React.CSSProperties = {
 
 function F({
   label, value, onChange, type = "text", placeholder = "",
-  as = "input", required = false, readOnly = false, hint, children,
+  as = "input", required = false, readOnly = false, hint, children, min,
 }: {
   label: string; value: string; onChange?: (v: string) => void;
   type?: string; placeholder?: string;
   as?: "input" | "textarea" | "select";
   required?: boolean; readOnly?: boolean;
   hint?: string; children?: React.ReactNode;
+  min?: string;
 }) {
   const [focused, setFocused] = useState(false);
   const bc = focused ? "#C4703A" : "#E8DED0";
   const h = { onFocus: () => setFocused(true), onBlur: () => setFocused(false) };
+
+  // For number inputs, clamp to >= 0 on change
+  const handleChange = (raw: string) => {
+    if (!onChange) return;
+    if (type === "number") {
+      const num = parseFloat(raw);
+      if (raw !== "" && num < 0) return; // block negative
+    }
+    onChange(raw);
+  };
 
   return (
     <div>
@@ -167,13 +188,20 @@ function F({
           {children}
         </select>
       ) : as === "textarea" ? (
-        <textarea value={value} onChange={(e) => onChange?.(e.target.value)} {...h}
+        <textarea value={value} onChange={(e) => handleChange(e.target.value)} {...h}
           placeholder={placeholder} rows={3}
           style={{ ...baseInput, border: `1.5px solid ${bc}`, resize: "vertical", lineHeight: 1.65 }} />
       ) : (
-        <input type={type} value={value} onChange={(e) => onChange?.(e.target.value)} {...h}
-          placeholder={placeholder} readOnly={readOnly}
-          style={{ ...baseInput, border: `1.5px solid ${bc}`, ...(readOnly ? { background: "#F0EAE2", color: "#7A5C42", cursor: "not-allowed" } : {}) }} />
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          {...h}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          min={type === "number" ? (min ?? "0") : undefined}
+          style={{ ...baseInput, border: `1.5px solid ${bc}`, ...(readOnly ? { background: "#F0EAE2", color: "#7A5C42", cursor: "not-allowed" } : {}) }}
+        />
       )}
       {hint && <p style={{ fontSize: "0.68rem", color: "#9B7B60", margin: "0.3rem 0 0", lineHeight: 1.4 }}>{hint}</p>}
     </div>
@@ -275,10 +303,7 @@ function EquipmentCard({
 }) {
   const upd = (key: keyof EquipmentItem) => (val: string) => onChange(item.id, key, val);
   return (
-    <div style={{
-      background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px",
-      padding: "1rem 1.1rem", position: "relative",
-    }}>
+    <div style={{ background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
         <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Item {index + 1}
@@ -311,6 +336,103 @@ function EquipmentCard({
   );
 }
 
+// ─── SpaceCard ────────────────────────────────────────────────────────────────
+
+function SpaceCard({
+  item, index, onChange, onRemove,
+}: {
+  item: SpaceItem; index: number;
+  onChange: (id: string, key: keyof SpaceItem, val: string | string[]) => void;
+  onRemove: (id: string) => void;
+}) {
+  const upd = (key: keyof SpaceItem) => (val: string) => onChange(item.id, key, val);
+  const toggleAmenity = (a: string) =>
+    onChange(item.id, "amenities",
+      item.amenities.includes(a)
+        ? item.amenities.filter((x) => x !== a)
+        : [...item.amenities, a]
+    );
+
+  return (
+    <div style={{ background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
+      {/* Card header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
+        <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          Space {index + 1}{item.spaceName ? ` — ${item.spaceName}` : ""}
+        </span>
+        <button type="button" onClick={() => onRemove(item.id)} style={{
+          background: "none", border: "1px solid #E8DED0", borderRadius: "6px",
+          color: "#9B7B60", fontSize: "0.72rem", fontWeight: 600,
+          padding: "0.2rem 0.55rem", cursor: "pointer",
+        }}>Remove</button>
+      </div>
+
+      {/* Basic info */}
+      <Row cols={3} mb="0.875rem">
+        <F label="Space Name" value={item.spaceName} onChange={upd("spaceName")} placeholder="e.g. Lumina Photography Studio" required />
+        <F label="Space Type" value={item.spaceType} onChange={upd("spaceType")} as="select" required>
+          <option value="">Select type</option>
+          {SPACE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </F>
+        <F label="Max Capacity (people)" value={item.capacity} onChange={upd("capacity")} type="number" placeholder="e.g. 10" />
+      </Row>
+
+      {/* Address */}
+      <SubBox label="📍 Address *">
+        <Row cols={3} mb="0.75rem">
+          <F label="Street / Building" value={item.addressLine1} onChange={upd("addressLine1")} placeholder="e.g. 12A, MG Road" required />
+          <F label="Area / Locality" value={item.addressArea} onChange={upd("addressArea")} placeholder="e.g. Hazratganj" required />
+          <CitySelect value={item.addressCity} onChange={(v) => onChange(item.id, "addressCity", v)} required />
+        </Row>
+        <Row cols={2} mb="0">
+          <F label="Pincode" value={item.pincode} onChange={upd("pincode")} placeholder="e.g. 226001" type="number" required />
+          <F label="Google Maps Link" value={item.googleMapsUrl} onChange={upd("googleMapsUrl")} placeholder="Paste share link from Google Maps" hint="Clients see this before arriving" />
+        </Row>
+      </SubBox>
+
+      {/* Pricing */}
+      <SubBox label="💰 Pricing (₹) *">
+        <Row cols={3} mb="0.75rem">
+          <F label="Per Hour" value={item.hourlyRate} onChange={upd("hourlyRate")} type="number" placeholder="e.g. 1200" required />
+          <F label="Half Day (4 hrs)" value={item.halfDayRate} onChange={upd("halfDayRate")} type="number" placeholder="e.g. 4000" />
+          <F label="Full Day (8 hrs)" value={item.fullDayRate} onChange={upd("fullDayRate")} type="number" placeholder="e.g. 7000" />
+        </Row>
+        <Row cols={1} mb="0">
+          <F label="Minimum Booking (hours)" value={item.minBookingHours} onChange={upd("minBookingHours")} type="number" placeholder="e.g. 2" hint="Minimum hours a client must book at once" />
+        </Row>
+      </SubBox>
+
+      {/* Description */}
+      <Row cols={1} mb="0.875rem">
+        <F label="Space Description" value={item.spaceDescription} onChange={upd("spaceDescription")} as="textarea"
+          placeholder="What makes your space special — vibe, lighting, ideal use, what shoots it's perfect for..." />
+      </Row>
+
+      {/* Amenities */}
+      <div style={{ marginBottom: "0.875rem" }}>
+        <label style={lbl}>Amenities</label>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.45rem" }}>
+          {AMENITIES_LIST.map((a) => (
+            <button key={a} type="button" onClick={() => toggleAmenity(a)} style={{
+              padding: "0.28rem 0.7rem", borderRadius: "100px", fontSize: "0.73rem", fontWeight: 600, cursor: "pointer",
+              border: item.amenities.includes(a) ? "1.5px solid #C4703A" : "1.5px solid #E8DED0",
+              background: item.amenities.includes(a) ? "rgba(196,112,58,0.08)" : "#FFFFFF",
+              color: item.amenities.includes(a) ? "#C4703A" : "#7A5C42", transition: "all 0.15s",
+            }}>{a}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Rules */}
+      <Row cols={1} mb="0">
+        <F label="House Rules" value={item.spaceRules} onChange={upd("spaceRules")} as="textarea"
+          placeholder="e.g. No footwear inside, No outside food, Music allowed till 9PM, No smoking on premises..."
+          hint="Shown to clients before they confirm — sets clear expectations" />
+      </Row>
+    </div>
+  );
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
@@ -322,7 +444,6 @@ export default function ProfilePage() {
 
   const [data, setData] = useState<ProfileData>(INITIAL_DATA);
 
-  // ── Load saved profile on mount ──
   useEffect(() => {
     loadProfile().then((saved) => {
       if (saved) setData(saved);
@@ -332,9 +453,20 @@ export default function ProfilePage() {
   const set = (key: keyof ProfileData) => (v: string | boolean) =>
     setData((p) => ({ ...p, [key]: v }));
 
-  const toggleAmenity = (a: string) =>
-    setData((p) => ({ ...p, amenities: p.amenities.includes(a) ? p.amenities.filter((x) => x !== a) : [...p.amenities, a] }));
+  // ── Space helpers ──
+  const addSpace = () =>
+    setData((p) => ({ ...p, spaces: [...p.spaces, EMPTY_SPACE()] }));
 
+  const removeSpace = (id: string) =>
+    setData((p) => ({ ...p, spaces: p.spaces.filter((s) => s.id !== id) }));
+
+  const updateSpace = (id: string, key: keyof SpaceItem, val: string | string[]) =>
+    setData((p) => ({
+      ...p,
+      spaces: p.spaces.map((s) => s.id === id ? { ...s, [key]: val } : s),
+    }));
+
+  // ── Equipment helpers ──
   const addEquipment = () =>
     setData((p) => ({ ...p, equipment: [...p.equipment, EMPTY_EQUIPMENT()] }));
 
@@ -362,7 +494,7 @@ export default function ProfilePage() {
     !!data.bio, !!data.city,
     (data.isCreator || data.isSpace || data.isEquipment) ? !!data.phone : true,
     data.isCreator ? !!(data.creatorCategory && data.startingPrice) : true,
-    data.isSpace ? !!(data.spaceName && data.addressLine1 && data.hourlyRate) : true,
+    data.isSpace ? data.spaces.length > 0 && data.spaces.every(s => !!(s.spaceName && s.addressLine1 && s.hourlyRate)) : true,
     data.isEquipment ? !!(data.equipmentAddressLine && data.equipmentCity && data.equipmentPincode && data.equipment.length > 0) : true,
   ];
   const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
@@ -371,11 +503,11 @@ export default function ProfilePage() {
     : (data.isCreator || data.isSpace || data.isEquipment) && !data.phone
     ? "⚠️ Phone required to list as creator, space, or equipment."
     : !data.bio ? "⚠️ Bio is required to book or be listed."
+    : data.isSpace && data.spaces.length === 0 ? "⚠️ Add at least one space."
     : data.isEquipment && data.equipment.length === 0 ? "⚠️ Add at least one equipment item."
     : completion < 100 ? "Fill required fields to go live."
     : "Profile is complete ✓";
 
-  // ── Loading skeleton ──
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#FAF7F2", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -489,59 +621,44 @@ export default function ProfilePage() {
 
         {/* ── Space Section ── */}
         {data.isSpace && (
-          <Section icon="🏛️" title="Space Profile" accent
+          <Section icon="🏛️" title="Space Listings" accent
             action={<Link href="/spaces/dashboard" style={{ fontSize: "0.7rem", fontWeight: 700, color: "#C4703A", textDecoration: "none" }}>Space Dashboard →</Link>}>
-            <Row cols={3} mb="0.875rem">
-              <F label="Space Name" value={data.spaceName} onChange={set("spaceName")} placeholder="e.g. Lumina Photography Studio" required />
-              <F label="Space Type" value={data.spaceType} onChange={set("spaceType")} as="select" required>
-                <option value="">Select type</option>
-                {SPACE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </F>
-              <F label="Max Capacity (people)" value={data.capacity} onChange={set("capacity")} type="number" placeholder="e.g. 10" />
-            </Row>
-            <SubBox label="📍 Address *">
-              <Row cols={3} mb="0.75rem">
-                <F label="Street / Building" value={data.addressLine1} onChange={set("addressLine1")} placeholder="e.g. 12A, MG Road" required />
-                <F label="Area / Locality" value={data.addressArea} onChange={set("addressArea")} placeholder="e.g. Hazratganj" required />
-                <CitySelect value={data.addressCity} onChange={set("addressCity")} required />
-              </Row>
-              <Row cols={2} mb="0">
-                <F label="Pincode" value={data.pincode} onChange={set("pincode")} placeholder="e.g. 226001" type="number" required />
-                <F label="Google Maps Link" value={data.googleMapsUrl} onChange={set("googleMapsUrl")} placeholder="Paste share link from Google Maps" hint="Clients see this before arriving" />
-              </Row>
-            </SubBox>
-            <SubBox label="💰 Pricing (₹) *">
-              <Row cols={3} mb="0.75rem">
-                <F label="Per Hour" value={data.hourlyRate} onChange={set("hourlyRate")} type="number" placeholder="e.g. 1200" required />
-                <F label="Half Day (4 hrs)" value={data.halfDayRate} onChange={set("halfDayRate")} type="number" placeholder="e.g. 4000" />
-                <F label="Full Day (8 hrs)" value={data.fullDayRate} onChange={set("fullDayRate")} type="number" placeholder="e.g. 7000" />
-              </Row>
-              <Row cols={1} mb="0">
-                <F label="Minimum Booking (hours)" value={data.minBookingHours} onChange={set("minBookingHours")} type="number" placeholder="e.g. 2" hint="Minimum hours a client must book at once" />
-              </Row>
-            </SubBox>
-            <Row cols={1} mb="0.875rem">
-              <F label="Space Description" value={data.spaceDescription} onChange={set("spaceDescription")} as="textarea"
-                placeholder="What makes your space special — vibe, lighting, ideal use, what shoots it's perfect for..." />
-            </Row>
-            <div style={{ marginBottom: "0.875rem" }}>
-              <label style={lbl}>Amenities</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.45rem" }}>
-                {AMENITIES_LIST.map((a) => (
-                  <button key={a} type="button" onClick={() => toggleAmenity(a)} style={{
-                    padding: "0.28rem 0.7rem", borderRadius: "100px", fontSize: "0.73rem", fontWeight: 600, cursor: "pointer",
-                    border: data.amenities.includes(a) ? "1.5px solid #C4703A" : "1.5px solid #E8DED0",
-                    background: data.amenities.includes(a) ? "rgba(196,112,58,0.08)" : "#FFFFFF",
-                    color: data.amenities.includes(a) ? "#C4703A" : "#7A5C42", transition: "all 0.15s",
-                  }}>{a}</button>
+
+            {data.spaces.length === 0 ? (
+              <div style={{
+                textAlign: "center", padding: "2rem 1rem",
+                border: "1.5px dashed #E8DED0", borderRadius: "12px",
+                marginBottom: "0.875rem",
+              }}>
+                <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🏛️</span>
+                <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#7A5C42", margin: "0 0 0.25rem" }}>No spaces listed yet</p>
+                <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>Add your studio, café, rooftop, or any creative space below</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "0.875rem" }}>
+                {data.spaces.map((space, i) => (
+                  <SpaceCard key={space.id} item={space} index={i} onChange={updateSpace} onRemove={removeSpace} />
                 ))}
               </div>
+            )}
+
+            <button type="button" onClick={addSpace} style={{
+              width: "100%", padding: "0.7rem", borderRadius: "10px",
+              border: "1.5px dashed #C4703A", background: "rgba(196,112,58,0.04)",
+              color: "#C4703A", fontSize: "0.875rem", fontWeight: 700,
+              cursor: "pointer", transition: "background 0.2s", display: "flex",
+              alignItems: "center", justifyContent: "center", gap: "0.4rem",
+            }}>
+              + Add Space
+            </button>
+
+            <div style={{
+              marginTop: "1rem", padding: "0.8rem 1rem", borderRadius: "10px",
+              background: "rgba(196,112,58,0.05)", border: "1px solid rgba(196,112,58,0.15)",
+              fontSize: "0.75rem", color: "#7A5C42", lineHeight: 1.6,
+            }}>
+              💡 Each space gets its own listing page. Clients can browse, compare, and book directly. You can manage availability and bookings from the Space Dashboard.
             </div>
-            <Row cols={1} mb="0">
-              <F label="House Rules" value={data.spaceRules} onChange={set("spaceRules")} as="textarea"
-                placeholder="e.g. No footwear inside, No outside food, Music allowed till 9PM, No smoking on premises..."
-                hint="Shown to clients before they confirm — sets clear expectations" />
-            </Row>
           </Section>
         )}
 

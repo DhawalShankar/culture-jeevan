@@ -1,6 +1,6 @@
 'use server'
 
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { ProfileData } from './page'
 
@@ -9,7 +9,6 @@ export async function loadProfile() {
   const { userId } = await auth()
   if (!userId) return null
 
-  // ── PROFILE (id = Clerk userId directly) ──
   const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('*')
@@ -18,19 +17,37 @@ export async function loadProfile() {
 
   if (profileError || !profile) return null
 
-  // ── CREATOR (unique per profile_id now) ──
   const { data: creator } = await supabaseAdmin
     .from('creators')
     .select('*')
     .eq('profile_id', userId)
     .maybeSingle()
 
-  // ── SPACE (unique per profile_id now) ──
-  const { data: space } = await supabaseAdmin
+  // ── SPACES (multiple rows per profile) ──
+  const { data: spaces } = await supabaseAdmin
     .from('spaces')
     .select('*')
     .eq('profile_id', userId)
-    .maybeSingle()
+    .order('created_at', { ascending: true })
+
+  const spaceItems = (spaces ?? []).map((s: any) => ({
+    id: s.id ?? '',
+    spaceName: s.space_name ?? '',
+    spaceType: s.space_type ?? '',
+    addressLine1: s.address_line1 ?? '',
+    addressArea: s.address_area ?? '',
+    addressCity: s.address_city ?? '',
+    pincode: s.pincode ?? '',
+    googleMapsUrl: s.google_maps_url ?? '',
+    hourlyRate: s.hourly_rate?.toString() ?? '',
+    halfDayRate: s.half_day_rate?.toString() ?? '',
+    fullDayRate: s.full_day_rate?.toString() ?? '',
+    capacity: s.capacity?.toString() ?? '',
+    minBookingHours: s.min_booking_hours?.toString() ?? '',
+    amenities: s.amenities ?? [],
+    spaceRules: s.space_rules ?? '',
+    spaceDescription: s.space_description ?? '',
+  }))
 
   // ── EQUIPMENT (multiple rows per profile) ──
   const { data: equipment } = await supabaseAdmin
@@ -39,7 +56,6 @@ export async function loadProfile() {
     .eq('profile_id', userId)
     .order('created_at', { ascending: true })
 
-  // Map DB rows → EquipmentItem shape used by the form
   const equipmentItems = (equipment ?? []).map((e: any) => ({
     id: e.id,
     name: e.name ?? '',
@@ -52,43 +68,23 @@ export async function loadProfile() {
   }))
 
   return {
-    // BASIC
     phone: profile.phone ?? '',
     city: profile.city ?? '',
     bio: profile.bio ?? '',
     instagramHandle: profile.instagram_handle ?? '',
     portfolioUrl: profile.portfolio_url ?? '',
 
-    // CREATOR
     isCreator: profile.is_creator ?? false,
     creatorCategory: creator?.category ?? '',
     startingPrice: creator?.starting_price?.toString() ?? '',
     experience: creator?.experience ?? '',
     languages: creator?.languages ?? '',
 
-    // SPACE
     isSpace: profile.is_space ?? false,
-    spaceId: space?.id ?? '',
-    spaceName: space?.space_name ?? '',
-    spaceType: space?.space_type ?? '',
-    addressLine1: space?.address_line1 ?? '',
-    addressArea: space?.address_area ?? '',
-    addressCity: space?.address_city ?? '',
-    pincode: space?.pincode ?? '',
-    googleMapsUrl: space?.google_maps_url ?? '',
-    hourlyRate: space?.hourly_rate?.toString() ?? '',
-    halfDayRate: space?.half_day_rate?.toString() ?? '',
-    fullDayRate: space?.full_day_rate?.toString() ?? '',
-    capacity: space?.capacity?.toString() ?? '',
-    minBookingHours: space?.min_booking_hours?.toString() ?? '',
-    amenities: space?.amenities ?? [],
-    spaceRules: space?.space_rules ?? '',
-    spaceDescription: space?.space_description ?? '',
+    spaces: spaceItems,
 
-    // EQUIPMENT
     isEquipment: profile.is_equipment ?? false,
     equipmentPhone: '',
-    // Pre-fill pickup address from first equipment row if exists
     equipmentAddressLine: equipment?.[0]?.pickup_address ?? '',
     equipmentArea: equipment?.[0]?.pickup_area ?? '',
     equipmentCity: equipment?.[0]?.pickup_city ?? '',
@@ -102,6 +98,11 @@ export async function saveProfile(formData: ProfileData) {
   const { userId } = await auth()
   if (!userId) return { error: 'Unauthorized' }
 
+  const { currentUser } = await import('@clerk/nextjs/server')
+  const clerkUser = await currentUser()
+  const fullName = [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') || null
+  const email = clerkUser?.emailAddresses?.[0]?.emailAddress ?? null
+
   try {
     // ── PROFILE ──
     const { error: profileError } = await supabaseAdmin
@@ -109,6 +110,8 @@ export async function saveProfile(formData: ProfileData) {
       .upsert(
         {
           id: userId,
+          full_name: fullName,
+          email,
           phone: formData.phone,
           city: formData.city,
           bio: formData.bio,
@@ -133,7 +136,6 @@ export async function saveProfile(formData: ProfileData) {
         .maybeSingle()
 
       if (existing) {
-        // UPDATE — safe because unique constraint guarantees 1 row
         const { error } = await supabaseAdmin
           .from('creators')
           .update({
@@ -143,7 +145,6 @@ export async function saveProfile(formData: ProfileData) {
             languages: formData.languages,
           })
           .eq('profile_id', userId)
-
         if (error) throw error
       } else {
         const { error } = await supabaseAdmin
@@ -155,96 +156,68 @@ export async function saveProfile(formData: ProfileData) {
             experience: formData.experience,
             languages: formData.languages,
           })
-
         if (error) throw error
       }
+    } else {
+      // Toggle off → remove creator listing
+      await supabaseAdmin.from('creators').delete().eq('profile_id', userId)
     }
 
-    // ── SPACE ──
-    if (formData.isSpace) {
-      if (formData.spaceId) {
-        const { error } = await supabaseAdmin
-          .from('spaces')
-          .update({
-            space_name: formData.spaceName,
-            space_type: formData.spaceType,
-            address_line1: formData.addressLine1,
-            address_area: formData.addressArea,
-            address_city: formData.addressCity,
-            pincode: formData.pincode,
-            google_maps_url: formData.googleMapsUrl,
-            hourly_rate: Number(formData.hourlyRate || 0),
-            half_day_rate: Number(formData.halfDayRate || 0),
-            full_day_rate: Number(formData.fullDayRate || 0),
-            capacity: Number(formData.capacity || 0),
-            min_booking_hours: Number(formData.minBookingHours || 1),
-            amenities: formData.amenities,
-            space_rules: formData.spaceRules,
-            space_description: formData.spaceDescription,
-          })
-          .eq('id', formData.spaceId)
+    // ── SPACES ──
+    // Strategy: delete all rows, then batch-insert fresh (same as equipment)
+    await supabaseAdmin.from('spaces').delete().eq('profile_id', userId)
 
-        if (error) throw error
-      } else {
-        const { error } = await supabaseAdmin
-          .from('spaces')
-          .insert({
+    if (formData.isSpace && formData.spaces.length > 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from('spaces')
+        .insert(
+          formData.spaces.map((s) => ({
             profile_id: userId,
-            space_name: formData.spaceName,
-            space_type: formData.spaceType,
+            space_name: s.spaceName,
+            space_type: s.spaceType,
             space_category: 'studio',
-            address_line1: formData.addressLine1,
-            address_area: formData.addressArea,
-            address_city: formData.addressCity,
-            pincode: formData.pincode,
-            google_maps_url: formData.googleMapsUrl,
-            hourly_rate: Number(formData.hourlyRate || 0),
-            half_day_rate: Number(formData.halfDayRate || 0),
-            full_day_rate: Number(formData.fullDayRate || 0),
-            capacity: Number(formData.capacity || 0),
-            min_booking_hours: Number(formData.minBookingHours || 1),
-            amenities: formData.amenities,
-            space_rules: formData.spaceRules,
-            space_description: formData.spaceDescription,
-          })
-
-        if (error) throw error
-      }
+            address_line1: s.addressLine1,
+            address_area: s.addressArea,
+            address_city: s.addressCity,
+            pincode: s.pincode,
+            google_maps_url: s.googleMapsUrl,
+            hourly_rate: Number(s.hourlyRate || 0),
+            half_day_rate: Number(s.halfDayRate || 0),
+            full_day_rate: Number(s.fullDayRate || 0),
+            capacity: Number(s.capacity || 0),
+            min_booking_hours: Number(s.minBookingHours || 1),
+            amenities: s.amenities,
+            space_rules: s.spaceRules,
+            space_description: s.spaceDescription,
+          }))
+        )
+      if (insertError) throw insertError
     }
 
     // ── EQUIPMENT ──
-    // Strategy: delete all existing rows for this user, then batch insert fresh
-    if (formData.isEquipment) {
-      const { error: deleteError } = await supabaseAdmin
+    await supabaseAdmin.from('equipment').delete().eq('profile_id', userId)
+
+    if (formData.isEquipment && formData.equipment.length > 0) {
+      const { error: insertError } = await supabaseAdmin
         .from('equipment')
-        .delete()
-        .eq('profile_id', userId)
-
-      if (deleteError) throw deleteError
-
-      if (formData.equipment.length > 0) {
-        const { error: insertError } = await supabaseAdmin
-          .from('equipment')
-          .insert(
-            formData.equipment.map((item) => ({
-              profile_id: userId,
-              name: item.name,
-              brand: item.brand,
-              category: item.category,
-              price_per_day: Number(item.pricePerDay || 0),
-              price_per_hour: Number(item.pricePerHour || 0),
-              condition: item.condition,
-              description: item.description,
-              pickup_address: formData.equipmentAddressLine,
-              pickup_area: formData.equipmentArea,
-              pickup_city: formData.equipmentCity,
-              pickup_pincode: formData.equipmentPincode,
-              is_available: true,
-            }))
-          )
-
-        if (insertError) throw insertError
-      }
+        .insert(
+          formData.equipment.map((item) => ({
+            profile_id: userId,
+            name: item.name,
+            brand: item.brand,
+            category: item.category,
+            price_per_day: Number(item.pricePerDay || 0),
+            price_per_hour: Number(item.pricePerHour || 0),
+            condition: item.condition,
+            description: item.description,
+            pickup_address: formData.equipmentAddressLine,
+            pickup_area: formData.equipmentArea,
+            pickup_city: formData.equipmentCity,
+            pickup_pincode: formData.equipmentPincode,
+            is_available: true,
+          }))
+        )
+      if (insertError) throw insertError
     }
 
     return { success: true }
