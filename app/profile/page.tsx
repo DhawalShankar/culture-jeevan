@@ -30,6 +30,7 @@ export interface ProfileData {
   experience: string;
   languages: string;
   isSpace: boolean;
+  spaceId: string;
   spaceName: string;
   spaceType: string;
   addressLine1: string;
@@ -104,7 +105,7 @@ const EMPTY_EQUIPMENT = (): EquipmentItem => ({
 const INITIAL_DATA: ProfileData = {
   phone: "", city: "", bio: "", instagramHandle: "", portfolioUrl: "",
   isCreator: false, creatorCategory: "", startingPrice: "", experience: "", languages: "",
-  isSpace: false, spaceName: "", spaceType: "",
+  isSpace: false, spaceName: "", spaceType: "", spaceId: "",
   addressLine1: "", addressArea: "", addressCity: "", pincode: "", googleMapsUrl: "",
   hourlyRate: "", halfDayRate: "", fullDayRate: "",
   capacity: "", minBookingHours: "", amenities: [], spaceRules: "", spaceDescription: "",

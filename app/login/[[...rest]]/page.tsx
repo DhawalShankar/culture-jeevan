@@ -89,7 +89,7 @@ export default function LoginPage() {
           padding: "2rem",
         }}>
           <SignIn
-            forceRedirectUrl="/dashboard"
+            forceRedirectUrl="/profile"
             appearance={{
               variables: {
                 colorPrimary: "#C4703A",
