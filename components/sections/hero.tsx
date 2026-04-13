@@ -131,7 +131,7 @@ export default function Hero() {
               </div>
               <h1 style={{ fontSize: "clamp(2.6rem, 5vw, 4.5rem)", fontWeight: 800, lineHeight: 0.95, margin: 0, letterSpacing: "-0.04em" }}>
                 <span style={{ color: "#FAF7F2", display: "block" }}>The Standard</span>
-                <span style={{ color: "transparent", WebkitTextStroke: "1px rgba(250,247,242,0.22)", display: "block" }}>for Creative</span>
+                <span style={{ color: "transparent", WebkitTextStroke: "1px rgba(255, 255, 255, 0.22)", display: "block" }}>for Creative</span>
                 <span style={{ color: "#C4703A", fontStyle: "italic", fontWeight: 900, display: "block" }}>Bookings.</span>
               </h1>
             </div>

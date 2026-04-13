@@ -1,11 +1,11 @@
 import Hero from "@/components/sections/hero";
-import HowItWorks from "@/components/sections/how-it-works";
+import WhyCultureJeevan from "@/components/sections/why-culture-jeevan";
 
 export default function Home() {
   return (
     <main style={{ backgroundColor: "#FAF7F2", color: "#1C1410", minHeight: "100vh" }}>
       <Hero />
-      <HowItWorks />
+      <WhyCultureJeevan />
     </main>
   );
 }
