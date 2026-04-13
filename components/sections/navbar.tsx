@@ -37,7 +37,7 @@ export default function Navbar() {
       return (
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <Link
-            href="/dashboard"
+            href="/profile"
             style={{
               fontSize: "0.875rem", fontWeight: 600,
               color: "#5C4A3A", textDecoration: "none",

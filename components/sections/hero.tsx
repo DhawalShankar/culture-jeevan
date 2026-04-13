@@ -157,7 +157,7 @@ export default function Hero() {
                   </svg>
                 </Link>
                 {/* ↓ bumped from 0.35 → 0.6 */}
-                <Link href="/list" style={{
+                <Link href="/login" style={{
                   fontSize: "0.78rem", color: "rgba(250,247,242,0.6)", textDecoration: "none",
                   borderBottom: "1px solid rgba(250,247,242,0.25)", paddingBottom: "1px", fontWeight: 500,
                 }}>

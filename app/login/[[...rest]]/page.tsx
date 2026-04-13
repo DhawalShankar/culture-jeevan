@@ -54,12 +54,14 @@ export default function LoginPage() {
             <h2 style={{
               fontFamily: "var(--font-playfair)",
               fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
-              fontWeight: 900, color: "#FAF7F2",
-              lineHeight: 1.2, marginBottom: "0.875rem",
+              fontWeight: 900,
+              color: "#FAF7F2",
+              lineHeight: 1.2,
+              marginBottom: "0.875rem",
             }}>
               Book the Creation.<br />Own the Moment.
             </h2>
-            <p style={{ fontSize: "0.875rem", color: "rgba(250,247,242,0.65)", lineHeight: 1.7, marginBottom: "2rem" }}>
+            <p style={{ fontSize: "0.875rem", color: "rgba(250,247,242,0.72)", lineHeight: 1.7, marginBottom: "2rem" }}>
               Find and book creative professionals, studios, and cafés across India — all in one place.
             </p>
             <div style={{ display: "flex", gap: "1.5rem" }}>
@@ -69,15 +71,15 @@ export default function LoginPage() {
                 { value: "Good", label: "Avg. Rating" },
               ].map((s) => (
                 <div key={s.label}>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.35rem", fontWeight: 900, color: "#C4703A", marginBottom: "0.1rem" }}>{s.value}</p>
-                  <p style={{ fontSize: "0.7rem", color: "rgba(250,247,242,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</p>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.35rem", fontWeight: 900, color: "#C4703A", margin: "0 0 0.1rem" }}>{s.value}</p>
+                  <p style={{ fontSize: "0.7rem", color: "rgba(250,247,242,0.55)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", margin: 0 }}>{s.label}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Right — Clerk UI */}
+        {/* Right — Clerk SignIn */}
         <div style={{
           flex: 1,
           backgroundColor: "#FFFFFF",
@@ -94,15 +96,22 @@ export default function LoginPage() {
                 colorBackground: "#FFFFFF",
                 colorInputBackground: "#FAF7F2",
                 colorInputText: "#1C1410",
+                colorText: "#1C1410",
+                colorTextSecondary: "#9B8070",
+                colorNeutral: "#1C1410",
                 borderRadius: "10px",
                 fontFamily: "var(--font-dm-sans), sans-serif",
               },
               elements: {
+                rootBox: {
+                  width: "100%",
+                },
                 card: {
                   boxShadow: "none",
                   border: "none",
                   padding: "3rem",
                   width: "100%",
+                  background: "transparent",
                 },
                 headerTitle: {
                   fontFamily: "var(--font-playfair), serif",
@@ -114,26 +123,50 @@ export default function LoginPage() {
                   color: "#9B8070",
                   fontSize: "0.82rem",
                 },
+                socialButtonsBlockButton: {
+                  border: "1px solid rgba(28,20,16,0.12)",
+                  backgroundColor: "#FAF7F2",
+                  color: "#1C1410",
+                  fontWeight: "600",
+                },
+                socialButtonsBlockButton__google: {
+                  border: "1px solid rgba(28,20,16,0.12)",
+                },
                 formButtonPrimary: {
                   backgroundColor: "#C4703A",
                   fontSize: "0.95rem",
-                  fontWeight: "800",
-                  "&:hover": { backgroundColor: "#A85C2E" },
+                  fontWeight: "700",
+                },
+                formFieldInput: {
+                  backgroundColor: "#FAF7F2",
+                  borderColor: "rgba(28,20,16,0.12)",
+                  color: "#1C1410",
+                  fontSize: "0.9rem",
+                },
+                formFieldLabel: {
+                  color: "#5C4A3A",
+                  fontSize: "0.78rem",
+                  fontWeight: "600",
                 },
                 footerActionLink: {
                   color: "#C4703A",
                   fontWeight: "600",
                 },
-                formFieldInput: {
-                  backgroundColor: "#FAF7F2",
-                  borderColor: "#E8DED0",
-                  color: "#1C1410",
-                },
                 dividerLine: {
-                  backgroundColor: "#E8DED0",
+                  backgroundColor: "rgba(28,20,16,0.1)",
                 },
                 dividerText: {
                   color: "#9B8070",
+                  fontSize: "0.78rem",
+                },
+                identityPreviewText: {
+                  color: "#1C1410",
+                },
+                formResendCodeLink: {
+                  color: "#C4703A",
+                },
+                alertText: {
+                  color: "#1C1410",
                 },
               },
             }}
@@ -144,7 +177,10 @@ export default function LoginPage() {
       <style>{`
         @media (max-width: 700px) {
           .auth-left { display: none !important; }
-          .auth-card { border-radius: 16px !important; }
+          .auth-card {
+            border-radius: 16px !important;
+            max-width: 440px !important;
+          }
         }
       `}</style>
     </div>
