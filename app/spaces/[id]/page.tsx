@@ -14,6 +14,5 @@ export default function Page({
 }: {
   params: { id: string };
 }) {
-  // return <StudioDetail id={params.id} />;
-  return <ComingSoon />
+  return <StudioDetail id={params.id} />;
 }

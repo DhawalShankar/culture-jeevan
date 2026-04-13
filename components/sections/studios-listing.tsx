@@ -328,7 +328,7 @@ function StudioCard({ studio }: { studio: Studio }) {
 
         {/* CTA */}
         <Link
-          href={`/studios/${studio.id}`}
+          href={`/spaces/${studio.id}`}
           style={{
             display: "block",
             width: "100%",

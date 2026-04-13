@@ -13,9 +13,16 @@ const STATS = [
 const CITIES = ["Lucknow", "Kanpur", "NCR"];
 
 const MARQUEE_ITEMS = [
-  "Photography Studios","Podcast Booths","Aesthetic Cafés","Rooftop Studios",
-  "Dance Studios","Film Studios","Singers & Musicians","Stand-up Comedians",
-  "Photographers","Video Editors","Mehendi Artists","Tabla Players",
+  "Photography Studios", "Podcast Booths", "Aesthetic Cafés", "Rooftop Studios",
+  "Dance Studios", "Film Studios", "Reel Spaces", "Recording Studios",
+  "Photographers", "Videographers", "Drone Pilots", "Cinematographers",
+  "Lighting Professionals", "Gaffers", "Grip Crew", "Set Designers",
+  "Singers", "Musicians", "Tabla Players", "Flautists", "Pianists",
+  "Guitarists", "Percussionists", "Sound Engineers", "Podcast Hosts",
+  "Stand-up Comedians", "Poets", "Storytellers", "Spoken Word Artists",
+  "Sketch Writers", "Anchors & Emcees", "Voice-over Artists",
+  "Video Editors", "Motion Designers", "Colorists", "Production Assistants",
+  "Art Directors", "Prop Stylists", "Costume Designers", "Makeup Artists",
 ];
 
 const CARDS = [
@@ -52,30 +59,30 @@ export default function Hero() {
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: "#0D0C0A" }}>
 
       {/* Protection Banner */}
-     <div style={{
-  background: "#fff1cc",
-  borderBottom: "1px solid rgba(45,36,30,0.08)",
-  padding: "0.45rem 2rem",
-  display: "flex", 
-  alignItems: "center", 
-  justifyContent: "center", 
-  gap: "0.6rem",
-}}>
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-    <path 
-      d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" 
-      stroke="#A65D2E" 
-      strokeWidth="1.8" 
-      strokeLinejoin="round"
-    />
-  </svg>
-  <span className="font-bold" style={{ fontSize: "0.7rem", color: "#5C544E", letterSpacing: "0.03em" }}>
-    All bookings are platform-protected. For your security,
-  </span>
-  <span style={{ fontSize: "0.7rem", color: "#A65D2E", fontWeight: 700, letterSpacing: "0.03em" }}>
-    always transact on CultureJeevan.
-  </span>
-</div>
+      <div style={{
+        background: "#fff1cc",
+        borderBottom: "1px solid rgba(45,36,30,0.08)",
+        padding: "0.45rem 2rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "0.6rem",
+      }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+            stroke="#A65D2E"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="font-bold" style={{ fontSize: "0.7rem", color: "#5C544E", letterSpacing: "0.03em" }}>
+          All bookings are platform-protected. For your security,
+        </span>
+        <span style={{ fontSize: "0.7rem", color: "#A65D2E", fontWeight: 700, letterSpacing: "0.03em" }}>
+          always transact on CultureJeevan.
+        </span>
+      </div>
 
       {/* Hero */}
       <section style={{ background: "#0D0C0A", position: "relative", overflow: "hidden" }}>
@@ -97,7 +104,7 @@ export default function Hero() {
               {CITIES.map((city, i) => (
                 <span key={city} style={{
                   fontSize: "0.62rem", fontWeight: 700,
-                  color: i === 0 ? "#C4703A" : "rgba(250,247,242,0.3)",
+                  color: i === 0 ? "#C4703A" : "rgba(250,247,242,0.45)",
                   padding: "0.15rem 0.65rem",
                   borderRight: i < CITIES.length - 1 ? "1px solid rgba(196,112,58,0.15)" : "none",
                   letterSpacing: "0.08em", textTransform: "uppercase",
@@ -105,7 +112,7 @@ export default function Hero() {
               ))}
             </div>
             <div style={{ width: "20px", height: "1px", background: "rgba(196,112,58,0.25)" }} />
-            <span style={{ fontSize: "0.62rem", color: "rgba(250,247,242,0.25)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500 }}>
+            <span style={{ fontSize: "0.62rem", color: "rgba(250,247,242,0.4)", letterSpacing: "0.1em", textTransform: "uppercase", fontWeight: 500 }}>
               India's Creative Booking Platform
             </span>
           </div>
@@ -115,25 +122,26 @@ export default function Hero() {
 
             <div>
               <div style={{
-                fontSize: "0.58rem", color: "rgba(196,112,58,0.45)", letterSpacing: "0.14em",
+                fontSize: "0.58rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.14em",
                 textTransform: "uppercase", fontWeight: 600, marginBottom: "0.9rem",
                 display: "flex", alignItems: "center", gap: "0.6rem",
               }}>
                 <span style={{ display: "inline-block", width: "22px", height: "1px", background: "rgba(196,112,58,0.4)" }} />
-                Est. 2025 · culturejeevan.co.in
+                Est. 2026 · culturejeevan.co.in
               </div>
               <h1 style={{ fontSize: "clamp(2.6rem, 5vw, 4.5rem)", fontWeight: 800, lineHeight: 0.95, margin: 0, letterSpacing: "-0.04em" }}>
                 <span style={{ color: "#FAF7F2", display: "block" }}>The Standard</span>
-                <span style={{ color: "transparent", WebkitTextStroke: "1px rgba(250,247,242,0.16)", display: "block" }}>for Creative</span>
+                <span style={{ color: "transparent", WebkitTextStroke: "1px rgba(250,247,242,0.22)", display: "block" }}>for Creative</span>
                 <span style={{ color: "#C4703A", fontStyle: "italic", fontWeight: 900, display: "block" }}>Bookings.</span>
               </h1>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              <p style={{ fontSize: "0.9rem", color: "rgba(250,247,242,0.4)", lineHeight: 1.75, margin: 0 }}>
+              {/* ↓ KEY FIX: opacity bumped from 0.4 → 0.72 for body copy */}
+              <p style={{ fontSize: "0.9rem", color: "rgba(250,247,242,0.72)", lineHeight: 1.75, margin: 0 }}>
                 Book verified creative professionals, studios, and cafés across India.
                 Secure your slot — scan QR on arrival — settle the rest directly.{" "}
-                <span style={{ color: "rgba(250,247,242,0.75)", fontWeight: 500 }}>Transparent. Protected. Professional.</span>
+                <span style={{ color: "#FAF7F2", fontWeight: 600 }}>Transparent. Protected. Professional.</span>
               </p>
 
               <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
@@ -148,17 +156,20 @@ export default function Hero() {
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </Link>
+                {/* ↓ bumped from 0.35 → 0.6 */}
                 <Link href="/list" style={{
-                  fontSize: "0.78rem", color: "rgba(250,247,242,0.35)", textDecoration: "none",
-                  borderBottom: "1px solid rgba(250,247,242,0.12)", paddingBottom: "1px", fontWeight: 500,
+                  fontSize: "0.78rem", color: "rgba(250,247,242,0.6)", textDecoration: "none",
+                  borderBottom: "1px solid rgba(250,247,242,0.25)", paddingBottom: "1px", fontWeight: 500,
                 }}>
                   List your profile — free
                 </Link>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", paddingTop: "0.4rem", borderTop: "1px solid rgba(250,247,242,0.04)" }}>
-                <span style={{ fontSize: "0.58rem", color: "rgba(196,112,58,0.3)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Our promise</span>
-                <span style={{ fontStyle: "italic", fontSize: "0.82rem", color: "rgba(250,247,242,0.12)" }}>Phasna Nahi, Udna Hai.</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", paddingTop: "0.4rem", borderTop: "1px solid rgba(250,247,242,0.06)" }}>
+                {/* ↓ bumped from 0.3 → 0.45 */}
+                <span style={{ fontSize: "0.58rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Our promise</span>
+                {/* ↓ bumped from 0.12 → 0.28 */}
+                <span style={{ fontStyle: "italic", fontSize: "0.82rem", color: "rgba(250,247,242,0.28)" }}>Phasna Nahi, Udna Hai.</span>
               </div>
             </div>
           </div>
@@ -194,12 +205,12 @@ export default function Hero() {
                     : "linear-gradient(165deg, rgba(13,12,10,0.28) 0%, rgba(13,12,10,0.92) 68%)",
                   transition: "background 0.35s",
                 }} />
-                <div style={{ position: "absolute", top: "0.9rem", left: "0.9rem", fontSize: "0.52rem", color: "rgba(250,247,242,0.18)", fontWeight: 700, letterSpacing: "0.1em" }}>
+                <div style={{ position: "absolute", top: "0.9rem", left: "0.9rem", fontSize: "0.52rem", color: "rgba(250,247,242,0.28)", fontWeight: 700, letterSpacing: "0.1em" }}>
                   0{idx + 1}
                 </div>
                 <div style={{
                   position: "absolute", top: "0.9rem", right: "0.9rem",
-                  background: "rgba(196,112,58,0.1)", border: "1px solid rgba(196,112,58,0.22)",
+                  background: "rgba(196,112,58,0.12)", border: "1px solid rgba(196,112,58,0.28)",
                   borderRadius: "100px", padding: "0.12rem 0.5rem",
                   fontSize: "0.52rem", color: "#C4703A", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
                 }}>
@@ -211,7 +222,8 @@ export default function Hero() {
                     background: "#C4703A", marginBottom: "0.5rem", transition: "width 0.3s ease",
                   }} />
                   <p style={{ fontSize: "0.95rem", fontWeight: 800, color: "#FAF7F2", margin: "0 0 0.2rem", letterSpacing: "-0.02em" }}>{card.label}</p>
-                  <p style={{ fontSize: "0.62rem", color: "rgba(250,247,242,0.38)", margin: 0, fontWeight: 500 }}>{card.sub}</p>
+                  {/* ↓ bumped from 0.38 → 0.6 */}
+                  <p style={{ fontSize: "0.62rem", color: "rgba(250,247,242,0.6)", margin: 0, fontWeight: 500 }}>{card.sub}</p>
                 </div>
               </Link>
             ))}
@@ -220,33 +232,50 @@ export default function Hero() {
           {/* Stats */}
           <div className="cj-stats" style={{
             display: "grid", gridTemplateColumns: "repeat(4, 1fr)",
-            border: "1px solid rgba(250,247,242,0.06)", borderRadius: "12px",
-            overflow: "hidden", background: "rgba(250,247,242,0.015)",
+            border: "1px solid rgba(250,247,242,0.08)", borderRadius: "12px",
+            overflow: "hidden", background: "rgba(250,247,242,0.02)",
           }}>
             {STATS.map((s, i) => (
               <div key={s.label} style={{
-                padding: "1rem", borderRight: i < STATS.length - 1 ? "1px solid rgba(250,247,242,0.06)" : "none",
+                padding: "1rem", borderRight: i < STATS.length - 1 ? "1px solid rgba(250,247,242,0.08)" : "none",
                 display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "0.2rem",
               }}>
                 <p style={{ fontSize: "1.35rem", fontWeight: 800, color: "#C4703A", margin: 0, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
-                <p style={{ fontSize: "0.56rem", color: "rgba(250,247,242,0.22)", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
+                {/* ↓ bumped from 0.22 → 0.45 */}
+                <p style={{ fontSize: "0.56rem", color: "rgba(250,247,242,0.45)", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Marquee */}
-        <div style={{ borderTop: "1px solid rgba(196,112,58,0.1)", padding: "0.7rem 0", overflow: "hidden", background: "rgba(196,112,58,0.025)", marginTop: "1.75rem" }}>
-          <div className="cj-marquee" style={{ display: "flex", whiteSpace: "nowrap" }}>
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+        {/* Marquee — hardware accelerated, mobile-safe */}
+        <div style={{
+          borderTop: "1px solid rgba(196,112,58,0.1)",
+          padding: "0.7rem 0",
+          overflow: "hidden",
+          background: "rgba(196,112,58,0.025)",
+          marginTop: "1.75rem",
+          /* Prevent iOS Safari from pausing the animation on scroll */
+          WebkitTransform: "translateZ(0)",
+        }}>
+          <div
+            className="cj-marquee"
+            style={{
+              display: "flex",
+              whiteSpace: "nowrap",
+              willChange: "transform",
+              WebkitBackfaceVisibility: "hidden",
+            }}
+          >
+            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
               <span key={i} style={{
                 display: "inline-flex", alignItems: "center", gap: "1rem",
                 fontSize: "0.58rem", fontWeight: 700,
-                color: i % 4 === 0 ? "#C4703A" : "rgba(250,247,242,0.16)",
+                color: i % 4 === 0 ? "#C4703A" : "rgba(250,247,242,0.28)",
                 letterSpacing: "0.1em", textTransform: "uppercase", padding: "0 1.5rem",
               }}>
                 {item}
-                <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "rgba(196,112,58,0.28)", display: "inline-block" }} />
+                <span style={{ width: "3px", height: "3px", borderRadius: "50%", background: "rgba(196,112,58,0.35)", display: "inline-block" }} />
               </span>
             ))}
           </div>
@@ -255,13 +284,32 @@ export default function Hero() {
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap');
-        .cj-marquee{animation:cj-scroll 38s linear infinite;}
-        @keyframes cj-scroll{0%{transform:translateX(0)}100%{transform:translateX(-33.333%)}}
-        @media(max-width:900px){
-          .cj-hero-top{grid-template-columns:1fr !important;}
-          .cj-cards{grid-template-columns:1fr !important;}
-          .cj-cards a{height:170px !important;}
-          .cj-stats{grid-template-columns:1fr 1fr !important;}
+
+        .cj-marquee {
+          animation: cj-scroll 8s linear infinite;
+          -webkit-animation: cj-scroll 8s linear infinite;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+        }
+
+        @keyframes cj-scroll {
+          0%   { transform: translate3d(0, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+        @-webkit-keyframes cj-scroll {
+          0%   { -webkit-transform: translate3d(0, 0, 0); }
+          100% { -webkit-transform: translate3d(-50%, 0, 0); }
+        }
+
+        @media (max-width: 900px) {
+          .cj-hero-top { grid-template-columns: 1fr !important; }
+          .cj-cards    { grid-template-columns: 1fr !important; }
+          .cj-cards a  { height: 170px !important; }
+          .cj-stats    { grid-template-columns: 1fr 1fr !important; }
+          .cj-marquee  {
+            animation: cj-scroll 8s linear infinite !important;
+            -webkit-animation: cj-scroll 8s linear infinite !important;
+          }
         }
       `}</style>
     </div>
