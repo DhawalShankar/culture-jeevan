@@ -4,13 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 
 const STATS = [
-  { value: "Multiple", label: "Verified Creators" },
-  { value: "Multiple", label: "Bookings Done" },
-  { value: "Good", label: "Avg Rating" },
-  { value: "Multiple", label: "Cities" },
+  { value: "3+ Cities", label: "Lucknow · Kanpur · NCR" },
+  { value: "Live", label: "Listings Now" },
+  { value: "Free", label: "To List" },
+  { value: "Soon", label: "Booking Opens" },
 ];
 
-const CITIES = ["Lucknow", "Kanpur", "NCR"];
+const CITIES = ["Kanpur", "Lucknow", "NCR"];
 
 const MARQUEE_ITEMS = [
   "Photography Studios", "Podcast Booths", "Aesthetic Cafés", "Rooftop Studios",
@@ -76,27 +76,12 @@ export default function Hero() {
             strokeLinejoin="round"
           />
         </svg>
-          <span
-            className="font-bold"
-            style={{
-              fontSize: "0.7rem",
-              color: "#3E3A36", // darker grey-brown
-              letterSpacing: "0.03em"
-            }}
-          >
-            All bookings are platform-protected. For your security,
-          </span>
-
-          <span
-            style={{
-              fontSize: "0.7rem",
-              color: "#7A3E1D", // darker, richer brown-orange
-              fontWeight: 700,
-              letterSpacing: "0.03em"
-            }}
-          >
-            always transact on CultureJeevan.
-          </span>
+        <span style={{ fontSize: "0.7rem", color: "#3E3A36", letterSpacing: "0.03em", fontWeight: 700 }}>
+          All bookings are platform-protected. For your security,
+        </span>
+        <span style={{ fontSize: "0.7rem", color: "#7A3E1D", fontWeight: 700, letterSpacing: "0.03em" }}>
+          always transact on CultureJeevan.
+        </span>
       </div>
 
       {/* Hero */}
@@ -152,26 +137,24 @@ export default function Hero() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              {/* ↓ KEY FIX: opacity bumped from 0.4 → 0.72 for body copy */}
               <p style={{ fontSize: "0.9rem", color: "rgba(250,247,242,0.72)", lineHeight: 1.75, margin: 0 }}>
                 Book verified creative professionals, studios, and cafés across India.
-                Secure your slot — scan QR on arrival — settle the rest directly.{" "}
+                Secure your slot with an advance — confirm arrival with a 6-digit OTP — settle the rest directly.{" "}
                 <span style={{ color: "#FAF7F2", fontWeight: 600 }}>Transparent. Protected. Professional.</span>
               </p>
 
               <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
-                <Link href="/explore" style={{
+                <Link href="/creators" style={{
                   display: "inline-flex", alignItems: "center", gap: "0.5rem",
                   background: "#C4703A", color: "#FAF7F2",
                   padding: "0.7rem 1.4rem", borderRadius: "100px",
                   textDecoration: "none", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.02em",
                 }}>
-                  Start Booking
+                  Browse Creators
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </Link>
-                {/* ↓ bumped from 0.35 → 0.6 */}
                 <Link href="/login" style={{
                   fontSize: "0.78rem", color: "rgba(250,247,242,0.6)", textDecoration: "none",
                   borderBottom: "1px solid rgba(250,247,242,0.25)", paddingBottom: "1px", fontWeight: 500,
@@ -181,9 +164,7 @@ export default function Hero() {
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", paddingTop: "0.4rem", borderTop: "1px solid rgba(250,247,242,0.06)" }}>
-                {/* ↓ bumped from 0.3 → 0.45 */}
                 <span style={{ fontSize: "0.58rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.1em", textTransform: "uppercase" }}>Our promise</span>
-                {/* ↓ bumped from 0.12 → 0.28 */}
                 <span style={{ fontStyle: "italic", fontSize: "0.82rem", color: "rgba(250,247,242,0.28)" }}>Phasna Nahi, Udna Hai.</span>
               </div>
             </div>
@@ -237,7 +218,6 @@ export default function Hero() {
                     background: "#C4703A", marginBottom: "0.5rem", transition: "width 0.3s ease",
                   }} />
                   <p style={{ fontSize: "0.95rem", fontWeight: 800, color: "#FAF7F2", margin: "0 0 0.2rem", letterSpacing: "-0.02em" }}>{card.label}</p>
-                  {/* ↓ bumped from 0.38 → 0.6 */}
                   <p style={{ fontSize: "0.62rem", color: "rgba(250,247,242,0.6)", margin: 0, fontWeight: 500 }}>{card.sub}</p>
                 </div>
               </Link>
@@ -256,32 +236,22 @@ export default function Hero() {
                 display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "0.2rem",
               }}>
                 <p style={{ fontSize: "1.35rem", fontWeight: 800, color: "#C4703A", margin: 0, letterSpacing: "-0.03em", lineHeight: 1 }}>{s.value}</p>
-                {/* ↓ bumped from 0.22 → 0.45 */}
                 <p style={{ fontSize: "0.56rem", color: "rgba(250,247,242,0.45)", margin: 0, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" }}>{s.label}</p>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Marquee — hardware accelerated, mobile-safe */}
+        {/* Marquee */}
         <div style={{
           borderTop: "1px solid rgba(196,112,58,0.1)",
           padding: "0.7rem 0",
           overflow: "hidden",
           background: "rgba(196,112,58,0.025)",
           marginTop: "1.75rem",
-          /* Prevent iOS Safari from pausing the animation on scroll */
           WebkitTransform: "translateZ(0)",
         }}>
-          <div
-            className="cj-marquee"
-            style={{
-              display: "flex",
-              whiteSpace: "nowrap",
-              willChange: "transform",
-              WebkitBackfaceVisibility: "hidden",
-            }}
-          >
+          <div className="cj-marquee" style={{ display: "flex", whiteSpace: "nowrap", willChange: "transform", WebkitBackfaceVisibility: "hidden" }}>
             {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
               <span key={i} style={{
                 display: "inline-flex", alignItems: "center", gap: "1rem",

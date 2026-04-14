@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Creator {
   id: string;
   profile_id: string;
@@ -20,9 +18,8 @@ interface Creator {
   full_name: string;
   city: string | null;
   bio: string | null;
+  email: string | null;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CITIES = ["Lucknow", "Kanpur", "Noida", "Ghaziabad", "Delhi", "Agra", "Prayagraj"];
 
@@ -35,8 +32,6 @@ const CREATOR_CATEGORIES = [
   "Set Designer", "Prop Stylist", "Costume Designer", "Makeup Artist",
   "Lighting Professional", "Gaffer", "Grip Crew", "Production Assistant", "Other",
 ];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function displayName(fullName: string | null | undefined, email?: string | null): string {
   if (fullName && fullName.trim()) return fullName.trim();
@@ -62,8 +57,6 @@ const sel: React.CSSProperties = {
   backgroundPosition: "right 0.5rem center",
   fontFamily: "inherit",
 };
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Stars({ rating }: { rating: number | null }) {
   const r = rating ?? 0;
@@ -104,8 +97,6 @@ function LoadingGrid() {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
 export default function CreatorsPage() {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +126,7 @@ export default function CreatorsPage() {
       full_name: displayName(r.profiles?.full_name, r.profiles?.email),
       city: r.profiles?.city ?? null,
       bio: r.profiles?.bio ?? null,
+      email: r.profiles?.email ?? null,
     }));
 
     if (city) list = list.filter((c) => c.city === city);
@@ -155,7 +147,6 @@ export default function CreatorsPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#FAF7F2", fontFamily: "var(--font-dm-sans), sans-serif" }}>
 
-      {/* Topbar */}
       <div style={{
         background: "#1C1410", padding: "0 2rem", height: "56px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -175,7 +166,6 @@ export default function CreatorsPage() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 4rem" }}>
 
-        {/* Header */}
         <div style={{ marginBottom: "2rem" }}>
           <p style={{ fontSize: "0.62rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, margin: "0 0 0.4rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ display: "inline-block", width: "18px", height: "1px", background: "rgba(196,112,58,0.4)" }} />
@@ -189,7 +179,6 @@ export default function CreatorsPage() {
           </p>
         </div>
 
-        {/* Filters */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem", alignItems: "center" }}>
           <select style={sel} value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">All Categories</option>
@@ -211,7 +200,6 @@ export default function CreatorsPage() {
           )}
         </div>
 
-        {/* Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "1rem" }}>
           {loading ? <LoadingGrid /> : creators.length === 0 ? (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "3rem 1rem" }}>
@@ -250,6 +238,7 @@ export default function CreatorsPage() {
                     </div>
                   </div>
                 </div>
+
                 <div style={{ padding: "0.875rem 1.1rem" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                     <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#C4703A" }}>{c.category}</span>
@@ -272,6 +261,18 @@ export default function CreatorsPage() {
                       <span style={{ fontSize: "0.72rem", color: "#9B7B60" }}>Price on request</span>
                     )}
                   </div>
+
+                  {c.email && (
+                    <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid #F0E8DC" }}>
+                      <a
+                        href={`mailto:${c.email}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ fontSize: "0.72rem", fontWeight: 600, color: "#C4703A", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.3rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                      >
+                        ✉️ {c.email}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>

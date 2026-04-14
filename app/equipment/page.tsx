@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Equipment {
   id: string;
   name: string;
@@ -19,9 +17,9 @@ interface Equipment {
   pickup_city: string | null;
   is_available: boolean;
   owner_name: string;
+  owner_phone: string | null;
+  owner_email: string | null;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CITIES = ["Lucknow", "Kanpur", "Noida", "Ghaziabad", "Delhi", "Agra", "Prayagraj"];
 
@@ -70,8 +68,6 @@ const conditionColor = (c: string | null) => {
   return "#9B7B60";
 };
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
 export default function EquipmentPage() {
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +83,7 @@ export default function EquipmentPage() {
       .select(`
         id, name, brand, category, price_per_day, price_per_hour,
         condition, description, pickup_area, pickup_city, is_available,
-        profiles(full_name, email)
+        profiles(full_name, email, phone)
       `)
       .order("is_available", { ascending: false })
       .order("created_at", { ascending: false });
@@ -100,6 +96,8 @@ export default function EquipmentPage() {
     setEquipment((data ?? []).map((r: any) => ({
       ...r,
       owner_name: displayName(r.profiles?.full_name, r.profiles?.email),
+      owner_phone: r.profiles?.phone ?? null,
+      owner_email: r.profiles?.email ?? null,
     })));
     setLoading(false);
   }, [category, city, availableOnly]);
@@ -109,7 +107,6 @@ export default function EquipmentPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#FAF7F2", fontFamily: "var(--font-dm-sans), sans-serif" }}>
 
-      {/* Topbar */}
       <div style={{
         background: "#1C1410", padding: "0 2rem", height: "56px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -129,7 +126,6 @@ export default function EquipmentPage() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 4rem" }}>
 
-        {/* Header */}
         <div style={{ marginBottom: "2rem" }}>
           <p style={{ fontSize: "0.62rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, margin: "0 0 0.4rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ display: "inline-block", width: "18px", height: "1px", background: "rgba(196,112,58,0.4)" }} />
@@ -143,7 +139,6 @@ export default function EquipmentPage() {
           </p>
         </div>
 
-        {/* Filters */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem", alignItems: "center" }}>
           <select style={sel} value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="">All Categories</option>
@@ -169,7 +164,6 @@ export default function EquipmentPage() {
           )}
         </div>
 
-        {/* Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem" }}>
           {loading ? <LoadingGrid /> : equipment.length === 0 ? (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "3rem 1rem" }}>
@@ -208,6 +202,7 @@ export default function EquipmentPage() {
                     {e.brand && <span style={{ fontSize: "0.72rem", color: "#9B7B60" }}>· {e.brand}</span>}
                   </div>
                 </div>
+
                 <div style={{ padding: "0.875rem 1.1rem" }}>
                   {e.description && (
                     <p style={{ fontSize: "0.75rem", color: "#7A5C42", margin: "0 0 0.7rem", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
@@ -234,9 +229,33 @@ export default function EquipmentPage() {
                       )}
                     </div>
                   </div>
+
                   <div style={{ marginTop: "0.6rem", fontSize: "0.7rem", color: "#9B7B60" }}>
                     Listed by <span style={{ color: "#7A5C42", fontWeight: 600 }}>{e.owner_name}</span>
                   </div>
+
+                  {(e.owner_phone || e.owner_email) && (
+                    <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid #F0E8DC", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                      {e.owner_phone && (
+                        <a
+                          href={`tel:${e.owner_phone}`}
+                          onClick={(ev) => ev.stopPropagation()}
+                          style={{ fontSize: "0.72rem", fontWeight: 600, color: "#C4703A", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.3rem" }}
+                        >
+                          📞 {e.owner_phone}
+                        </a>
+                      )}
+                      {e.owner_email && (
+                        <a
+                          href={`mailto:${e.owner_email}`}
+                          onClick={(ev) => ev.stopPropagation()}
+                          style={{ fontSize: "0.72rem", fontWeight: 600, color: "#C4703A", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.3rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                        >
+                          ✉️ {e.owner_email}
+                        </a>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>

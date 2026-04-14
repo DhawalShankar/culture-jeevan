@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
 const PHASES = [
   {
     phase: "Phase 1",
-    label: "Booking",
+    label: "Discover",
     color: "#C4703A",
     bg: "#FDF0E6",
     border: "#F0DCC8",
@@ -14,46 +15,46 @@ const PHASES = [
         number: "01",
         icon: "🔍",
         title: "Find What You Need",
-        desc: "Browse verified Creators, Studios, and Cafés across India. Filter by city, category, price, and rating.",
+        desc: "Browse verified Creators, Studios, and Cafés in your city. Filter by category, price, and rating. Every listing shows the Creator's real rate, their advance percentage, and links to their actual work — Instagram, YouTube, website.",
       },
       {
         number: "02",
         icon: "📅",
         title: "Pick Your Slot",
-        desc: "Select your date and time from available slots — hourly, half-day, full-day, or multi-day. The rate and advance percentage are visible upfront. No surprises.",
+        desc: "Select your date and time from available slots — hourly, half-day, full-day, or multi-day. The rate and advance percentage are visible upfront. No DMs, no negotiations, no surprises.",
       },
       {
         number: "03",
-        icon: "💳",
-        title: "Pay 50–80% Advance",
-        desc: "Secure your booking by paying the advance on the platform. Each Creator and Space sets their own advance percentage (50–80%). Non-refundable if you no-show.",
+        icon: "✉️",
+        title: "Send a Request",
+        desc: "Send your booking request with full event details. The Creator reviews and accepts, rejects, or sends a custom quote. Spaces like Cafés and Studios confirm instantly — no waiting required.",
       },
     ],
   },
   {
     phase: "Phase 2",
-    label: "Arrival",
+    label: "Secure",
     color: "#2E8B7A",
     bg: "#E8F5F2",
     border: "#C0E0DA",
     steps: [
       {
         number: "04",
-        icon: "📍",
-        title: "Show Up",
-        desc: "Arrive at the booked Creator or Space at the confirmed time. Everything is pre-confirmed — no calls, no follow-up needed.",
+        icon: "💳",
+        title: "Pay the Advance",
+        desc: "Once accepted, pay 50–80% advance through the app. The money is held safely by CultureJeevan — not released until you confirm arrival on the day. Your slot is locked. Nobody can ghost you now.",
       },
       {
         number: "05",
-        icon: "📲",
-        title: "Scan the QR Code",
-        desc: "Scan the static QR code on arrival. This marks your booking as Active instantly — no paperwork, no check-in hassle.",
+        icon: "📍",
+        title: "Show Up",
+        desc: "Arrive at the confirmed time. Everything is pre-agreed — rate, slot, expectations. No last-minute calls, no follow-up needed. Just walk in.",
       },
       {
         number: "06",
-        icon: "💸",
-        title: "Creator Gets Paid",
-        desc: "The moment you scan, the Creator or Space's share of the advance is released. Bank transfer arrives within T+2 business days.",
+        icon: "🔢",
+        title: "Share Your OTP",
+        desc: "On the day, your booking has a 6-digit OTP. Share it with the Creator or Space on arrival. They enter it into their dashboard — the advance releases to their account instantly.",
       },
     ],
   },
@@ -90,7 +91,7 @@ const REVENUE_EXAMPLE = [
   { label: "Total Booking Value", value: "₹2,000", highlight: false },
   { label: "Advance Paid on App (50%)", value: "₹1,000", highlight: false },
   { label: "CultureJeevan Commission (10%)", value: "₹100", highlight: false },
-  { label: "Creator Payout via T+2 Transfer", value: "₹900", highlight: false },
+  { label: "Creator Payout via Bank Transfer", value: "₹900", highlight: false },
   { label: "Balance Paid Directly (Cash/UPI)", value: "₹1,000", highlight: false },
   { label: "Creator Earns Total", value: "₹1,900", highlight: true },
 ];
@@ -99,7 +100,7 @@ const CONFLICT_SCENARIOS = [
   {
     icon: "🚫",
     scenario: "Creator No-Show",
-    action: "Advance is NOT refunded. CultureJeevan takes its 10% commission. The QR is never scanned, booking auto-closes.",
+    action: "OTP is never entered. Advance is returned to the customer within T+2 business days. CultureJeevan retains its 10% commission.",
   },
   {
     icon: "🏚️",
@@ -115,16 +116,20 @@ const CONFLICT_SCENARIOS = [
 
 const FAQS = [
   {
+    q: "What can I do on CultureJeevan right now?",
+    a: "Listings are live — browse Creators, Cafés, Studios, and Equipment across Lucknow, Kanpur, and NCR. Check rates, visit their Instagram and YouTube, and know exactly who you want before booking goes live.",
+  },
+  {
     q: "Is the advance always non-refundable?",
     a: "Only if you (the customer) are a no-show. If the Creator or Space fails to show up, you get a 100% refund — no questions asked. Cancellations 5+ days before the event are also fully refunded.",
   },
   {
     q: "How does the advance percentage work?",
-    a: "Each Creator and Space sets their own advance percentage between 50% and 80%. This is clearly visible on their listing before you book. 100% upfront is never allowed.",
+    a: "Each Creator and Space sets their own advance percentage between 50% and 80%. This is clearly visible on their listing before you book. 100% upfront is never allowed on the platform.",
   },
   {
-    q: "How does the Creator or Space get paid?",
-    a: "Once you scan the QR code on arrival, their share of the advance is released immediately. Bank transfer arrives within T+2 business days.",
+    q: "How does the OTP arrival confirmation work?",
+    a: "When your booking is confirmed, the platform generates a 6-digit OTP for that booking. On the day, you share this OTP with the Creator or Space. They enter it — the advance releases to their account. Simple, no scanning, works on any device.",
   },
   {
     q: "Can I pay the full amount on the app?",
@@ -132,7 +137,7 @@ const FAQS = [
   },
   {
     q: "What if a Creator or Space tries to make me bypass the platform?",
-    a: "Report it immediately. 30-day suspension on first offense, permanent ban on the second. Bookings outside CultureJeevan are not protected.",
+    a: "Report it immediately. 30-day suspension on first offense, permanent ban on the second. Bookings outside CultureJeevan are not protected by any of our policies.",
   },
   {
     q: "What is CultureJeevan's commission?",
@@ -140,7 +145,20 @@ const FAQS = [
   },
 ];
 
+const OCCASIONS = [
+  { icon: "💍", text: "Wedding Functions" },
+  { icon: "🏢", text: "Corporate Events" },
+  { icon: "🎓", text: "College Fests" },
+  { icon: "📹", text: "Reel & Film Shoots" },
+  { icon: "🎉", text: "Birthday Parties" },
+  { icon: "☕", text: "Café Evenings" },
+  { icon: "🎪", text: "Open Mics" },
+  { icon: "📣", text: "Brand Campaigns" },
+];
+
 export default function HowItWorks() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <div style={{ backgroundColor: "#FAF7F2", minHeight: "100vh" }}>
 
@@ -162,7 +180,7 @@ export default function HowItWorks() {
             textTransform: "uppercase", padding: "0.35rem 1rem",
             borderRadius: "100px", marginBottom: "1.25rem",
           }}>
-            Scan-to-Book Flow
+            Listings Are Live — Booking Coming Soon
           </span>
           <h1 style={{
             fontFamily: "var(--font-playfair)",
@@ -172,10 +190,14 @@ export default function HowItWorks() {
           }}>
             How CultureJeevan Works
           </h1>
-          <p style={{ fontSize: "1rem", color: "#9B7B60", lineHeight: 1.8, marginBottom: "2rem" }}>
+          <p style={{ fontSize: "1rem", color: "#9B7B60", lineHeight: 1.8, marginBottom: "0.75rem" }}>
             A transparent 3-phase system — from discovery to completion.
-            Pay 50–80% to book, scan a QR when you arrive, settle
-            the rest directly. No grey areas. No surprises.
+            Find the right Creator or Space, secure your slot with an advance,
+            confirm arrival with a 6-digit OTP, and settle the rest directly.
+            No grey areas. No surprises. No middlemen.
+          </p>
+          <p style={{ fontSize: "0.875rem", color: "#5C3D26", lineHeight: 1.7, marginBottom: "2rem", fontStyle: "italic" }}>
+            Phasna Nahi, Udna Hai.
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/creators" style={{
@@ -183,7 +205,7 @@ export default function HowItWorks() {
               padding: "0.75rem 1.75rem", borderRadius: "10px",
               fontSize: "0.9rem", fontWeight: 700, textDecoration: "none",
             }}>
-              Book a Creator →
+              Browse Creators →
             </Link>
             <Link href="/spaces" style={{
               backgroundColor: "transparent", color: "#FAF7F2",
@@ -191,10 +213,23 @@ export default function HowItWorks() {
               fontSize: "0.9rem", fontWeight: 600,
               textDecoration: "none", border: "1.5px solid #3D2918",
             }}>
-              Browse Spaces
+              Explore Spaces
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* ── Live Now Banner ── */}
+      <div style={{
+        backgroundColor: "#E8F5F2",
+        borderTop: "1px solid #C0E0DA",
+        borderBottom: "1px solid #C0E0DA",
+        padding: "1.1rem 2rem",
+        textAlign: "center",
+      }}>
+        <p style={{ fontSize: "0.875rem", color: "#2E8B7A", fontWeight: 600, lineHeight: 1.6 }}>
+          ✓ &nbsp;Creators, Spaces &amp; Equipment listings are live across Lucknow, Kanpur &amp; NCR — browse and shortlist today. Booking opens very soon.
+        </p>
       </div>
 
       {/* ── Phase Timeline ── */}
@@ -233,6 +268,21 @@ export default function HowItWorks() {
                 {phase.phase}: {phase.label}
               </div>
               <div style={{ flex: 1, height: "1px", backgroundColor: "#E8DED0" }} />
+              {pi === 0 ? (
+                <span style={{
+                  fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#2E8B7A",
+                  backgroundColor: "#E8F5F2", border: "1px solid #C0E0DA",
+                  padding: "0.2rem 0.65rem", borderRadius: "100px", flexShrink: 0,
+                }}>Live Now</span>
+              ) : (
+                <span style={{
+                  fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#C4703A",
+                  backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8",
+                  padding: "0.2rem 0.65rem", borderRadius: "100px", flexShrink: 0,
+                }}>Coming Soon</span>
+              )}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.25rem" }} className="steps-grid">
@@ -273,6 +323,40 @@ export default function HowItWorks() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* ── Occasions ── */}
+      <div style={{ backgroundColor: "#F5EFE7", padding: "4rem 2rem" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
+          <span style={{
+            display: "inline-block", backgroundColor: "#FAF7F2", color: "#C4703A",
+            fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
+            textTransform: "uppercase", padding: "0.35rem 1rem",
+            borderRadius: "100px", marginBottom: "1rem", border: "1px solid #E8DED0",
+          }}>
+            Every Occasion
+          </span>
+          <h2 style={{
+            fontFamily: "var(--font-playfair)",
+            fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+            fontWeight: 900, color: "#1C1410",
+            letterSpacing: "-0.02em", marginBottom: "2rem",
+          }}>
+            One Platform. Any Creative Need.
+          </h2>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.875rem", justifyContent: "center" }}>
+            {OCCASIONS.map((o, i) => (
+              <div key={i} style={{
+                backgroundColor: "#FFFFFF", border: "1px solid #E8DED0",
+                borderRadius: "100px", padding: "0.575rem 1.25rem",
+                display: "flex", alignItems: "center", gap: "0.5rem",
+              }}>
+                <span style={{ fontSize: "1rem" }}>{o.icon}</span>
+                <span style={{ fontSize: "0.875rem", color: "#1C1410", fontWeight: 600 }}>{o.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* ── Revenue Breakdown ── */}
@@ -385,14 +469,34 @@ export default function HowItWorks() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
             {FAQS.map((faq, i) => (
-              <div key={i} style={{
-                backgroundColor: "#FFFFFF", border: "1px solid #E8DED0",
-                borderRadius: "14px", padding: "1.25rem 1.5rem",
-              }}>
-                <p style={{ fontFamily: "var(--font-playfair)", fontSize: "0.95rem", fontWeight: 800, color: "#1C1410", marginBottom: "0.5rem" }}>
-                  {faq.q}
-                </p>
-                <p style={{ fontSize: "0.875rem", color: "#6B5240", lineHeight: 1.75 }}>{faq.a}</p>
+              <div
+                key={i}
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: `1px solid ${openFaq === i ? "#C4703A" : "#E8DED0"}`,
+                  borderRadius: "14px", overflow: "hidden", cursor: "pointer",
+                }}
+              >
+                <div style={{
+                  padding: "1.25rem 1.5rem",
+                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem",
+                }}>
+                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "0.95rem", fontWeight: 800, color: "#1C1410", lineHeight: 1.4 }}>
+                    {faq.q}
+                  </p>
+                  <span style={{
+                    color: "#C4703A", fontSize: "1.2rem", flexShrink: 0, fontWeight: 700,
+                    display: "inline-block",
+                    transform: openFaq === i ? "rotate(45deg)" : "none",
+                    transition: "transform 0.2s",
+                  }}>+</span>
+                </div>
+                {openFaq === i && (
+                  <div style={{ padding: "0 1.5rem 1.25rem", borderTop: "1px solid #F5EFE7" }}>
+                    <p style={{ fontSize: "0.875rem", color: "#6B5240", lineHeight: 1.75 }}>{faq.a}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -402,17 +506,26 @@ export default function HowItWorks() {
       {/* ── CTA ── */}
       <div style={{ backgroundColor: "#1C1410", padding: "5rem 2rem", textAlign: "center" }}>
         <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+          <p style={{
+            fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.15em",
+            textTransform: "uppercase", color: "#5C3D26", marginBottom: "1rem",
+          }}>
+            Lucknow · Kanpur · NCR
+          </p>
           <h2 style={{
             fontFamily: "var(--font-playfair)",
             fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
             fontWeight: 900, color: "#FAF7F2",
             letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: "1rem",
           }}>
-            Ready to Book?
+            Start Exploring Today.
           </h2>
-          <p style={{ fontSize: "0.95rem", color: "#9B7B60", lineHeight: 1.8, marginBottom: "2rem" }}>
-            Find your Creator or Space, pay the advance to lock it in,
-            and walk in with confidence. Every creative need — one platform.
+          <p style={{ fontSize: "0.95rem", color: "#9B7B60", lineHeight: 1.8, marginBottom: "0.5rem" }}>
+            Listings are live. Browse Creators and Spaces now — know exactly
+            who you want the moment booking opens.
+          </p>
+          <p style={{ fontSize: "0.85rem", color: "#5C3D26", lineHeight: 1.7, marginBottom: "2rem", fontStyle: "italic" }}>
+            Phasna Nahi, Udna Hai.
           </p>
           <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/creators" style={{
@@ -420,7 +533,7 @@ export default function HowItWorks() {
               padding: "0.875rem 2rem", borderRadius: "10px",
               fontSize: "0.95rem", fontWeight: 700, textDecoration: "none",
             }}>
-              Book a Creator →
+              Browse Creators →
             </Link>
             <Link href="/spaces" style={{
               backgroundColor: "transparent", color: "#FAF7F2",
@@ -428,7 +541,7 @@ export default function HowItWorks() {
               fontSize: "0.95rem", fontWeight: 600,
               textDecoration: "none", border: "1.5px solid #3D2918",
             }}>
-              Browse Spaces
+              Explore Spaces
             </Link>
           </div>
         </div>

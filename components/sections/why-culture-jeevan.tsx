@@ -8,14 +8,14 @@ const PILLARS = [
   {
     number: "I",
     title: "Verified Identity. Protected Payments.",
-    body: "Every booking on CultureJeevan is phone-verified and advance-secured. The platform holds the advance until the creator arrives — then releases it instantly on QR scan. No more vanishing clients. No more broken promises.",
-    tag: "Payment Infrastructure",
+    body: "Every booking on CultureJeevan is phone-verified and advance-secured. The platform holds the advance until the Creator arrives — then releases it the moment you share your 6-digit OTP. No more vanishing creators. No more broken promises.",
+    tag: "Payment Security",
   },
   {
     number: "II",
-    title: "Your Rate. Your Terms. Your Advance.",
-    body: "Creators set their own price, their own advance percentage (50–80%), and their own available slots. No agency markup. No platform interference. The market decides the rate — the platform enforces the agreement.",
-    tag: "Creator Autonomy",
+    title: "Their Rate. Their Terms. Your Clarity.",
+    body: "Every Creator sets their own price, their own advance percentage (50–80%), and their own available slots. You see it all before you send a single request. No hidden charges. No negotiation in the dark. No surprises.",
+    tag: "Full Transparency",
   },
   {
     number: "III",
@@ -26,15 +26,15 @@ const PILLARS = [
   {
     number: "IV",
     title: "Reputation That Cannot Be Manufactured.",
-    body: "Badges are earned through completed bookings and genuine reviews. CJ Verified at 50. Silver at 200. Gold at 500. Platinum at 1000. No application. No fee. No shortcut. Just real work.",
+    body: "Badges are earned through completed bookings and genuine reviews. CJ Verified at 50. Silver at 200. Gold at 500. Platinum at 1000. No application. No fee. No shortcut. Only real work earns them — so you can trust them.",
     tag: "Trust Architecture",
   },
 ];
 
 const METRICS = [
-  { value: "99%", label: "of India's creators operate without a manager or booking infrastructure" },
-  { value: "₹0", label: "in advance protection exists for creative professionals today" },
-  { value: "3", label: "cities at launch — Lucknow, Kanpur, NCR — where the gap is widest" },
+  { value: "99%", label: "of India's creative professionals operate without a manager or booking infrastructure" },
+  { value: "₹0", label: "in advance protection exists for creative professionals in the informal market today" },
+  { value: "3", label: "cities at launch — Lucknow, Kanpur, NCR — where the talent gap is widest" },
 ];
 
 const CATEGORIES = [
@@ -47,10 +47,30 @@ const CATEGORIES = [
 ];
 
 const TIMELINE = [
-  { phase: "Phase 01", title: "Web Platform", detail: "Full booking flow on culturejeevan.co.in. Available on every device, instantly." },
-  { phase: "Phase 02", title: "WhatsApp Notifications", detail: "Booking confirmations, request alerts, and advance release — in Hinglish, feeling local." },
-  { phase: "Phase 03", title: "Mobile App", detail: "React Native iOS & Android — built after real traction, not before." },
-  { phase: "Phase 04", title: "City Expansion", detail: "Slow, deliberate growth from MVP cities outward. Quality over scale." },
+  {
+    phase: "Phase 01",
+    title: "Listings Live Now",
+    detail: "Browse verified Creators, Spaces, and Equipment across Lucknow, Kanpur, and NCR. Check rates, portfolios, and reviews today.",
+    live: true,
+  },
+  {
+    phase: "Phase 02",
+    title: "Booking & Payments",
+    detail: "Full advance-secured booking flow with 6-digit OTP arrival confirmation. Razorpay-powered. Coming very soon.",
+    live: false,
+  },
+  {
+    phase: "Phase 03",
+    title: "WhatsApp Notifications",
+    detail: "Booking confirmations, request alerts, and advance release — in Hinglish, feeling local.",
+    live: false,
+  },
+  {
+    phase: "Phase 04",
+    title: "Mobile App",
+    detail: "React Native iOS & Android — built after real traction, not before.",
+    live: false,
+  },
 ];
 
 // ─── Hook: Intersection Observer ─────────────────────────────────────────────
@@ -136,10 +156,10 @@ export default function WhyCultureJeevan() {
           <Reveal delay={200}>
             <div style={{ paddingTop: "0.5rem" }}>
               <p style={{ fontSize: "1.05rem", color: "#5C4A3A", lineHeight: 1.85, margin: "0 0 1.5rem" }}>
-                The creative economy in India is vast, talented, and deeply underserved. Every day, thousands of bookings are negotiated over WhatsApp, confirmed with a handshake, and lost to a last-minute cancellation with no recourse.
+                Every day, thousands of bookings are negotiated over WhatsApp, confirmed with a handshake, and lost to a last-minute cancellation with no recourse. The photographer who never got paid. The comedian whose show fell through. The studio that got ghosted.
               </p>
               <p style={{ fontSize: "1.05rem", color: "#5C4A3A", lineHeight: 1.85, margin: 0 }}>
-                CultureJeevan exists to change that infrastructure — not the people, not the culture, not the art. Only the system that lets it happen reliably.
+                CultureJeevan exists to fix the infrastructure — not the people, not the culture, not the art. Only the system that lets it happen reliably.
               </p>
             </div>
           </Reveal>
@@ -171,7 +191,7 @@ export default function WhyCultureJeevan() {
         <Divider />
 
         {/* ── 03 Four Pillars ── */}
-        <Reveal><Label>Platform Architecture</Label></Reveal>
+        <Reveal><Label>Why CultureJeevan</Label></Reveal>
         <Reveal delay={100}>
           <h2 style={{
             fontFamily: "var(--font-playfair), Georgia, serif",
@@ -239,7 +259,7 @@ export default function WhyCultureJeevan() {
                 One platform for every creative service imaginable.
               </h2>
               <p style={{ fontSize: "1rem", color: "#7A5C42", lineHeight: 1.8, margin: "0 0 2rem" }}>
-                From a tabla player at a corporate event to a cinematographer on a feature shoot — if it requires creative skill, it belongs on CultureJeevan.
+                From a tabla player at a corporate event to a cinematographer on a feature shoot — if it requires creative skill, it belongs on CultureJeevan. Browse them all today.
               </p>
               <div style={{ display: "inline-flex", alignItems: "center", gap: "0.6rem", background: "#1C1410", padding: "0.6rem 1.1rem", borderRadius: "100px" }}>
                 <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#C4703A", display: "inline-block" }} />
@@ -271,23 +291,36 @@ export default function WhyCultureJeevan() {
         <Divider />
 
         {/* ── 05 Payment Flow ── */}
-        <Reveal><Label>The Payment Flow</Label></Reveal>
+        <Reveal><Label>How Booking Works</Label></Reveal>
         <Reveal delay={100}>
           <h2 style={{
             fontFamily: "var(--font-playfair), Georgia, serif",
             fontSize: "clamp(1.8rem, 3.5vw, 2.8rem)", fontWeight: 900,
-            color: "#1C1410", margin: "0 0 3.5rem", letterSpacing: "-0.01em", maxWidth: "600px",
+            color: "#1C1410", margin: "0 0 0.75rem", letterSpacing: "-0.01em", maxWidth: "600px",
           }}>
             Simple. Secure. Nothing left to chance.
           </h2>
         </Reveal>
+        <Reveal delay={150}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: "0.5rem",
+            background: "#E8F5F2", border: "1px solid #C0E0DA",
+            borderRadius: "100px", padding: "0.4rem 1rem",
+            marginBottom: "3rem",
+          }}>
+            <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#2E8B7A", display: "inline-block", flexShrink: 0 }} />
+            <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#2E8B7A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              Booking opens very soon — listings are live today
+            </span>
+          </div>
+        </Reveal>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0", background: "#E8DED0", border: "1px solid #E8DED0", borderRadius: "16px", overflow: "hidden", marginBottom: "1.5rem" }}>
           {[
-            { n: "1", t: "Request Sent", d: "Customer submits a booking with full event details — name, date, occasion, location." },
-            { n: "2", t: "Advance Secured", d: "Customer pays 50–80% advance. Held by CultureJeevan until the creator arrives." },
-            { n: "3", t: "QR Scan on Day", d: "Creator arrives. Customer scans QR. Advance releases instantly to creator's account." },
-            { n: "4", t: "Balance Settled", d: "Remaining payment goes directly — cash or UPI. CultureJeevan takes only its 10% commission." },
+            { n: "1", t: "Browse & Request", d: "Find your Creator or Space. Send a booking request with your event details — date, occasion, location. Spaces confirm instantly." },
+            { n: "2", t: "Advance Secured", d: "Pay 50–80% advance through the platform. CultureJeevan holds it safely — not released until you confirm arrival on the day." },
+            { n: "3", t: "Share Your OTP", d: "On the day, your booking has a 6-digit OTP. Share it with the Creator or Space on arrival. They enter it — advance releases to their account." },
+            { n: "4", t: "Balance Settled", d: "Pay the remaining amount directly — Cash or UPI — straight to the Creator or Space. CultureJeevan takes only its 10% on the advance." },
           ].map((s, i) => (
             <Reveal key={i} delay={i * 100}>
               <div style={{
@@ -315,17 +348,33 @@ export default function WhyCultureJeevan() {
         <Divider />
 
         {/* ── 06 Roadmap ── */}
-        <Reveal><Label>Roadmap</Label></Reveal>
+        <Reveal><Label>Where We Are</Label></Reveal>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "2rem", marginBottom: "0" }}>
           {TIMELINE.map((t, i) => (
             <Reveal key={i} delay={i * 100}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
-                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#C4703A", flexShrink: 0 }} />
+                  <div style={{
+                    width: "8px", height: "8px", borderRadius: "50%", flexShrink: 0,
+                    background: t.live ? "#2E8B7A" : "#C4703A",
+                    boxShadow: t.live ? "0 0 0 3px rgba(46,139,122,0.2)" : "none",
+                  }} />
                   <div style={{ flex: 1, height: "1px", background: i < 3 ? "#E8DED0" : "transparent" }} />
                 </div>
-                <p style={{ fontSize: "0.62rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.15em", textTransform: "uppercase", margin: "0 0 0.5rem" }}>{t.phase}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem" }}>
+                  <p style={{ fontSize: "0.62rem", fontWeight: 700, color: t.live ? "#2E8B7A" : "#C4703A", letterSpacing: "0.15em", textTransform: "uppercase", margin: 0 }}>{t.phase}</p>
+                  <span style={{
+                    fontSize: "0.58rem", fontWeight: 700, letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: t.live ? "#2E8B7A" : "#9B7B60",
+                    background: t.live ? "#E8F5F2" : "#F5EFE7",
+                    border: `1px solid ${t.live ? "#C0E0DA" : "#E8DED0"}`,
+                    padding: "0.15rem 0.5rem", borderRadius: "100px",
+                  }}>
+                    {t.live ? "Live" : "Soon"}
+                  </span>
+                </div>
                 <p style={{ fontSize: "0.92rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.5rem" }}>{t.title}</p>
                 <p style={{ fontSize: "0.82rem", color: "#7A5C42", lineHeight: 1.6, margin: 0 }}>{t.detail}</p>
               </div>
@@ -358,22 +407,22 @@ export default function WhyCultureJeevan() {
                 The infrastructure India's<br />creative class deserves.
               </h2>
               <p style={{ fontSize: "1rem", color: "rgba(250,247,242,0.5)", margin: 0, lineHeight: 1.7, maxWidth: "480px" }}>
-                Be among the first creators and spaces to build a verified reputation on the platform before the market catches up.
+                Listings are live. Browse the talent in your city now — and be ready to book the moment it opens.
               </p>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", flexShrink: 0, position: "relative" }}>
-              <a href="/profile"
+              <a href="/creators"
                 onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
                 onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
                 style={{ display: "block", padding: "0.95rem 2rem", background: "#C4703A", color: "#FAF7F2", borderRadius: "10px", fontWeight: 700, fontSize: "0.9rem", textDecoration: "none", textAlign: "center", whiteSpace: "nowrap", letterSpacing: "0.02em", transition: "opacity 0.2s" }}>
-                List Your Profile →
+                Browse Creators →
               </a>
-              <a href="/creators"
+              <a href="/spaces"
                 onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(250,247,242,0.4)"; (e.currentTarget as HTMLAnchorElement).style.color = "#FAF7F2"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.borderColor = "rgba(250,247,242,0.15)"; (e.currentTarget as HTMLAnchorElement).style.color = "rgba(250,247,242,0.6)"; }}
                 style={{ display: "block", padding: "0.95rem 2rem", background: "transparent", color: "rgba(250,247,242,0.6)", border: "1px solid rgba(250,247,242,0.15)", borderRadius: "10px", fontWeight: 600, fontSize: "0.9rem", textDecoration: "none", textAlign: "center", whiteSpace: "nowrap", transition: "border-color 0.2s, color 0.2s" }}>
-                Browse Creators
+                Explore Spaces
               </a>
             </div>
           </div>
@@ -389,7 +438,7 @@ export default function WhyCultureJeevan() {
         }
         @media (max-width: 600px) {
           div[style*="grid-template-columns: repeat(3, 1fr)"] { grid-template-columns: 1fr !important; }
-          div[style*="grid-template-columns: repeat(4, 1fr)"] { grid-template-columns: 1fr !important; }
+          div[style*="grid-template-columns: repeat(4, 1fr)"] { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
     </section>

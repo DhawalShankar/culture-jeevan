@@ -307,20 +307,20 @@ export default function Navbar() {
               );
             })}
 
-            {/* Divider */}
-            <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} />
+            {/* Divider
+            <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} /> */}
 
             {/* Bell — always visible on desktop */}
-            <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
+            {/* <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
               <BellIcon />
-            </IconButton>
+            </IconButton> */}
 
             {/* Cart — visible only when logged in (only logged-in users can book) */}
-            {isLoaded && user && (
+            {/* {isLoaded && user && (
               <IconButton href="/cart" label="My Cart" count={MOCK_CART_COUNT}>
                 <CartIcon />
               </IconButton>
-            )}
+            )} */}
 
             {/* Divider */}
             <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} />

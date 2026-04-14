@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface Space {
   id: string;
   space_name: string;
@@ -23,9 +21,8 @@ interface Space {
   is_cj_certified: boolean;
   space_description: string | null;
   owner_name: string;
+  owner_phone: string | null;
 }
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const CITIES = ["Lucknow", "Kanpur", "Noida", "Ghaziabad", "Delhi", "Agra", "Prayagraj"];
 
@@ -92,8 +89,6 @@ function LoadingGrid() {
   );
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-
 export default function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +105,7 @@ export default function SpacesPage() {
         id, space_name, space_type, space_category,
         address_area, address_city, hourly_rate, capacity, amenities,
         avg_rating, review_count, badge, is_premium, is_cj_certified,
-        space_description, profiles(full_name, email)
+        space_description, profiles(full_name, email, phone)
       `)
       .order("is_premium", { ascending: false })
       .order("review_count", { ascending: false });
@@ -127,6 +122,7 @@ export default function SpacesPage() {
     setSpaces((data ?? []).map((r: any) => ({
       ...r,
       owner_name: displayName(r.profiles?.full_name, r.profiles?.email),
+      owner_phone: r.profiles?.phone ?? null,
       amenities: r.amenities ?? [],
     })));
     setLoading(false);
@@ -139,7 +135,6 @@ export default function SpacesPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#FAF7F2", fontFamily: "var(--font-dm-sans), sans-serif" }}>
 
-      {/* Topbar */}
       <div style={{
         background: "#1C1410", padding: "0 2rem", height: "56px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -159,7 +154,6 @@ export default function SpacesPage() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2rem 1.5rem 4rem" }}>
 
-        {/* Header */}
         <div style={{ marginBottom: "2rem" }}>
           <p style={{ fontSize: "0.62rem", color: "rgba(196,112,58,0.55)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700, margin: "0 0 0.4rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span style={{ display: "inline-block", width: "18px", height: "1px", background: "rgba(196,112,58,0.4)" }} />
@@ -173,7 +167,6 @@ export default function SpacesPage() {
           </p>
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
           {(["studio", "cafe"] as const).map((t) => (
             <button key={t} type="button"
@@ -190,7 +183,6 @@ export default function SpacesPage() {
           ))}
         </div>
 
-        {/* Filters */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.5rem", alignItems: "center" }}>
           <select style={sel} value={spaceType} onChange={(e) => setSpaceType(e.target.value)}>
             <option value="">All Types</option>
@@ -209,7 +201,6 @@ export default function SpacesPage() {
           )}
         </div>
 
-        {/* Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
           {loading ? <LoadingGrid /> : spaces.length === 0 ? (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "3rem 1rem" }}>
@@ -245,6 +236,7 @@ export default function SpacesPage() {
                     {s.is_cj_certified && <Pill>✓ CJ Certified</Pill>}
                   </div>
                 </div>
+
                 <div style={{ padding: "0.875rem 1.1rem" }}>
                   {s.space_description && (
                     <p style={{ fontSize: "0.75rem", color: "#7A5C42", margin: "0 0 0.7rem", lineHeight: 1.55, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const, overflow: "hidden" }}>
@@ -263,6 +255,7 @@ export default function SpacesPage() {
                       )}
                     </div>
                   )}
+
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <span style={{ fontSize: "0.72rem", color: "#9B7B60" }}>
                       📍 {[s.address_area, s.address_city].filter(Boolean).join(", ") || "—"}
@@ -276,6 +269,18 @@ export default function SpacesPage() {
                       <span style={{ fontSize: "0.72rem", color: "#9B7B60" }}>Price on request</span>
                     )}
                   </div>
+
+                  {s.owner_phone && (
+                    <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px solid #F0E8DC" }}>
+                      <a
+                        href={`tel:${s.owner_phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ fontSize: "0.72rem", fontWeight: 600, color: "#C4703A", textDecoration: "none", display: "flex", alignItems: "center", gap: "0.3rem" }}
+                      >
+                        📞 {s.owner_phone}
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
