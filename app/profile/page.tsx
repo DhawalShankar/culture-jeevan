@@ -59,6 +59,27 @@ export interface ProfileData {
   equipment: EquipmentItem[];
 }
 
+// ─── Validation errors shape ──────────────────────────────────────────────────
+
+interface ValidationErrors {
+  // top-level
+  phone?: string;
+  city?: string;
+  bio?: string;
+  // creator
+  creatorCategory?: string;
+  startingPrice?: string;
+  // equipment section
+  equipmentAddressLine?: string;
+  equipmentArea?: string;
+  equipmentCity?: string;
+  equipmentPincode?: string;
+  // per-space: keyed by space id
+  spaces?: Record<string, Partial<Record<keyof SpaceItem, string>>>;
+  // per-equipment: keyed by equipment id
+  equipment?: Record<string, Partial<Record<keyof EquipmentItem, string>>>;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CITIES = ["Lucknow", "Kanpur", "Noida", "Ghaziabad", "Delhi", "Agra", "Prayagraj", "Other"];
@@ -125,8 +146,84 @@ const INITIAL_DATA: ProfileData = {
 };
 
 // ─── Phone validation ─────────────────────────────────────────────────────────
-// Must start with 6–9 and be exactly 10 digits (Indian mobile)
+
 const isValidPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone.trim());
+
+// ─── Master validation function ───────────────────────────────────────────────
+
+function validate(data: ProfileData): ValidationErrors {
+  const errors: ValidationErrors = {};
+  const listingToggled = data.isCreator || data.isSpace || data.isEquipment;
+
+  // ── Always required ──
+  if (!data.bio.trim()) errors.bio = "Bio is required.";
+  if (!data.city.trim()) errors.city = "City is required.";
+
+  // ── Phone: required if any listing is on ──
+  if (listingToggled) {
+    if (!data.phone.trim()) {
+      errors.phone = "Phone number is required to be listed.";
+    } else if (!isValidPhone(data.phone)) {
+      errors.phone = "Enter a valid 10-digit Indian mobile number (starts with 6–9).";
+    }
+  } else if (data.phone && !isValidPhone(data.phone)) {
+    errors.phone = "Enter a valid 10-digit Indian mobile number (starts with 6–9).";
+  }
+
+  // ── Creator ──
+  if (data.isCreator) {
+    if (!data.creatorCategory) errors.creatorCategory = "Select a category.";
+    if (!data.startingPrice.trim()) errors.startingPrice = "Starting price is required.";
+    else if (Number(data.startingPrice) <= 0) errors.startingPrice = "Enter a price greater than 0.";
+  }
+
+  // ── Spaces ──
+  if (data.isSpace) {
+    const spaceErrors: Record<string, Partial<Record<keyof SpaceItem, string>>> = {};
+    data.spaces.forEach((s) => {
+      const e: Partial<Record<keyof SpaceItem, string>> = {};
+      if (!s.spaceName.trim()) e.spaceName = "Space name is required.";
+      if (!s.spaceType) e.spaceType = "Select a space type.";
+      if (!s.addressLine1.trim()) e.addressLine1 = "Street address is required.";
+      if (!s.addressArea.trim()) e.addressArea = "Area / locality is required.";
+      if (!s.addressCity) e.addressCity = "Select a city.";
+      if (!s.pincode.trim()) e.pincode = "Pincode is required.";
+      else if (!/^\d{6}$/.test(s.pincode.trim())) e.pincode = "Enter a valid 6-digit pincode.";
+      if (!s.hourlyRate.trim()) e.hourlyRate = "Hourly rate is required.";
+      else if (Number(s.hourlyRate) <= 0) e.hourlyRate = "Enter a rate greater than 0.";
+      if (Object.keys(e).length > 0) spaceErrors[s.id] = e;
+    });
+    if (Object.keys(spaceErrors).length > 0) errors.spaces = spaceErrors;
+  }
+
+  // ── Equipment ──
+  if (data.isEquipment) {
+    // pickup address
+    if (!data.equipmentAddressLine.trim()) errors.equipmentAddressLine = "Street address is required.";
+    if (!data.equipmentArea.trim()) errors.equipmentArea = "Area / locality is required.";
+    if (!data.equipmentCity) errors.equipmentCity = "Select a city.";
+    if (!data.equipmentPincode.trim()) errors.equipmentPincode = "Pincode is required.";
+    else if (!/^\d{6}$/.test(data.equipmentPincode.trim())) errors.equipmentPincode = "Enter a valid 6-digit pincode.";
+
+    // per-item
+    const equipErrors: Record<string, Partial<Record<keyof EquipmentItem, string>>> = {};
+    data.equipment.forEach((item) => {
+      const e: Partial<Record<keyof EquipmentItem, string>> = {};
+      if (!item.name.trim()) e.name = "Equipment name is required.";
+      if (!item.category) e.category = "Select a category.";
+      if (!item.pricePerDay.trim()) e.pricePerDay = "Price per day is required.";
+      else if (Number(item.pricePerDay) <= 0) e.pricePerDay = "Enter a price greater than 0.";
+      if (Object.keys(e).length > 0) equipErrors[item.id] = e;
+    });
+    if (Object.keys(equipErrors).length > 0) errors.equipment = equipErrors;
+  }
+
+  return errors;
+}
+
+function hasErrors(errors: ValidationErrors): boolean {
+  return Object.keys(errors).length > 0;
+}
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -221,17 +318,23 @@ function F({
 
 // ─── CitySelect ───────────────────────────────────────────────────────────────
 
-function CitySelect({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
+function CitySelect({ value, onChange, required, error }: {
+  value: string; onChange: (v: string) => void; required?: boolean; error?: string;
+}) {
   const [focused, setFocused] = useState(false);
+  const hasError = !!error;
   return (
     <div>
       <label style={lbl}>City{required && <span style={{ color: "#C4703A" }}> *</span>}</label>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{ ...baseInput, border: `1.5px solid ${focused ? "#C4703A" : "#E8DED0"}`, cursor: "pointer", appearance: "none", backgroundImage: SELECT_ARROW, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2rem" }}>
+        style={{ ...baseInput, border: `1.5px solid ${hasError ? "#C0392B" : focused ? "#C4703A" : "#E8DED0"}`, cursor: "pointer", appearance: "none", backgroundImage: SELECT_ARROW, backgroundRepeat: "no-repeat", backgroundPosition: "right 0.75rem center", paddingRight: "2rem" }}>
         <option value="">Select city</option>
         {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
       </select>
+      {hasError && (
+        <p style={{ fontSize: "0.68rem", color: "#C0392B", margin: "0.3rem 0 0", lineHeight: 1.4, fontWeight: 600 }}>{error}</p>
+      )}
     </div>
   );
 }
@@ -320,15 +423,16 @@ function TogglePill({ checked, onChange, icon, label, sub, disabled, disabledRea
 // ─── EquipmentCard ────────────────────────────────────────────────────────────
 
 function EquipmentCard({
-  item, index, onChange, onRemove,
+  item, index, onChange, onRemove, errors,
 }: {
   item: EquipmentItem; index: number;
   onChange: (id: string, key: keyof EquipmentItem, val: string) => void;
   onRemove: (id: string) => void;
+  errors?: Partial<Record<keyof EquipmentItem, string>>;
 }) {
   const upd = (key: keyof EquipmentItem) => (val: string) => onChange(item.id, key, val);
   return (
-    <div style={{ background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
+    <div style={{ background: "#FDFAF7", border: `1px solid ${errors && Object.keys(errors).length ? "#C0392B" : "#E8DED0"}`, borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
         <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Item {index + 1}
@@ -340,15 +444,15 @@ function EquipmentCard({
         }}>Remove</button>
       </div>
       <Row cols={3} mb="0.75rem">
-        <F label="Equipment Name" value={item.name} onChange={upd("name")} placeholder="e.g. Sony A7 III" required />
+        <F label="Equipment Name" value={item.name} onChange={upd("name")} placeholder="e.g. Sony A7 III" required error={errors?.name} />
         <F label="Brand" value={item.brand} onChange={upd("brand")} placeholder="e.g. Sony, Canon, DJI" />
-        <F label="Category" value={item.category} onChange={upd("category")} as="select" required>
+        <F label="Category" value={item.category} onChange={upd("category")} as="select" required error={errors?.category}>
           <option value="">Select category</option>
           {EQUIPMENT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </F>
       </Row>
       <Row cols={3} mb="0.75rem">
-        <F label="Price / Day (₹)" value={item.pricePerDay} onChange={upd("pricePerDay")} type="number" placeholder="e.g. 1500" required />
+        <F label="Price / Day (₹)" value={item.pricePerDay} onChange={upd("pricePerDay")} type="number" placeholder="e.g. 1500" required error={errors?.pricePerDay} />
         <F label="Price / Hour (₹)" value={item.pricePerHour} onChange={upd("pricePerHour")} type="number" placeholder="e.g. 300" />
         <F label="Condition" value={item.condition} onChange={upd("condition")} as="select">
           <option value="">Select condition</option>
@@ -364,11 +468,12 @@ function EquipmentCard({
 // ─── SpaceCard ────────────────────────────────────────────────────────────────
 
 function SpaceCard({
-  item, index, onChange, onRemove,
+  item, index, onChange, onRemove, errors,
 }: {
   item: SpaceItem; index: number;
   onChange: (id: string, key: keyof SpaceItem, val: string | string[]) => void;
   onRemove: (id: string) => void;
+  errors?: Partial<Record<keyof SpaceItem, string>>;
 }) {
   const upd = (key: keyof SpaceItem) => (val: string) => onChange(item.id, key, val);
   const toggleAmenity = (a: string) =>
@@ -379,7 +484,7 @@ function SpaceCard({
     );
 
   return (
-    <div style={{ background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
+    <div style={{ background: "#FDFAF7", border: `1px solid ${errors && Object.keys(errors).length ? "#C0392B" : "#E8DED0"}`, borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
         <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Space {index + 1}{item.spaceName ? ` — ${item.spaceName}` : ""}
@@ -392,8 +497,8 @@ function SpaceCard({
       </div>
 
       <Row cols={3} mb="0.875rem">
-        <F label="Space Name" value={item.spaceName} onChange={upd("spaceName")} placeholder="e.g. Lumina Photography Studio" required />
-        <F label="Space Type" value={item.spaceType} onChange={upd("spaceType")} as="select" required>
+        <F label="Space Name" value={item.spaceName} onChange={upd("spaceName")} placeholder="e.g. Lumina Photography Studio" required error={errors?.spaceName} />
+        <F label="Space Type" value={item.spaceType} onChange={upd("spaceType")} as="select" required error={errors?.spaceType}>
           <option value="">Select type</option>
           {SPACE_TYPES.map((s) => <option key={s} value={s}>{s}</option>)}
         </F>
@@ -402,19 +507,19 @@ function SpaceCard({
 
       <SubBox label="📍 Address *">
         <Row cols={3} mb="0.75rem">
-          <F label="Street / Building" value={item.addressLine1} onChange={upd("addressLine1")} placeholder="e.g. 12A, MG Road" required />
-          <F label="Area / Locality" value={item.addressArea} onChange={upd("addressArea")} placeholder="e.g. Hazratganj" required />
-          <CitySelect value={item.addressCity} onChange={(v) => onChange(item.id, "addressCity", v)} required />
+          <F label="Street / Building" value={item.addressLine1} onChange={upd("addressLine1")} placeholder="e.g. 12A, MG Road" required error={errors?.addressLine1} />
+          <F label="Area / Locality" value={item.addressArea} onChange={upd("addressArea")} placeholder="e.g. Hazratganj" required error={errors?.addressArea} />
+          <CitySelect value={item.addressCity} onChange={(v) => onChange(item.id, "addressCity", v)} required error={errors?.addressCity} />
         </Row>
         <Row cols={2} mb="0">
-          <F label="Pincode" value={item.pincode} onChange={upd("pincode")} placeholder="e.g. 226001" type="number" required />
+          <F label="Pincode" value={item.pincode} onChange={upd("pincode")} placeholder="e.g. 226001" type="number" required error={errors?.pincode} />
           <F label="Google Maps Link" value={item.googleMapsUrl} onChange={upd("googleMapsUrl")} placeholder="Paste share link from Google Maps" hint="Clients see this before arriving" />
         </Row>
       </SubBox>
 
       <SubBox label="💰 Pricing (₹) *">
         <Row cols={3} mb="0.75rem">
-          <F label="Per Hour" value={item.hourlyRate} onChange={upd("hourlyRate")} type="number" placeholder="e.g. 1200" required />
+          <F label="Per Hour" value={item.hourlyRate} onChange={upd("hourlyRate")} type="number" placeholder="e.g. 1200" required error={errors?.hourlyRate} />
           <F label="Half Day (4 hrs)" value={item.halfDayRate} onChange={upd("halfDayRate")} type="number" placeholder="e.g. 4000" />
           <F label="Full Day (8 hrs)" value={item.fullDayRate} onChange={upd("fullDayRate")} type="number" placeholder="e.g. 7000" />
         </Row>
@@ -459,7 +564,11 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string>("");
+
+  // Live validation errors — populated on save attempt, cleared per-field as user fixes them
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  // Whether user has attempted save at least once (controls live re-validation)
+  const [attempted, setAttempted] = useState(false);
 
   const [data, setData] = useState<ProfileData>(INITIAL_DATA);
 
@@ -469,55 +578,45 @@ export default function ProfilePage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  // ── Phone change handler — validates and auto-disables toggles if invalid ──
-  const handlePhoneChange = (value: string) => {
-    // Strip non-digits for validation but store raw for UX
-    const digits = value.replace(/\D/g, "");
+  // Re-run validation live after first save attempt so errors clear as user types
+  useEffect(() => {
+    if (attempted) setErrors(validate(data));
+  }, [data, attempted]);
 
+  // ── Phone change handler ──
+  const handlePhoneChange = (value: string) => {
+    const digits = value.replace(/\D/g, "");
     setData((prev) => {
       const phoneOk = isValidPhone(digits);
-      // If phone becomes invalid and any listing toggle is on, force them off
       const shouldForceOff = !phoneOk && (prev.isCreator || prev.isSpace || prev.isEquipment);
       return {
         ...prev,
-        phone: digits, // store only digits
+        phone: digits,
         ...(shouldForceOff ? { isCreator: false, isSpace: false, isEquipment: false } : {}),
       };
     });
-
-    if (digits.length === 0) {
-      setPhoneError("");
-    } else if (digits.length < 10) {
-      setPhoneError("Phone number must be 10 digits.");
-    } else if (!isValidPhone(digits)) {
-      setPhoneError("Enter a valid Indian mobile number (starts with 6–9).");
-    } else {
-      setPhoneError("");
-    }
   };
 
-  // ── Toggle handler — blocks if phone invalid, auto-saves on toggle OFF ──
+  // ── Toggle handler ──
   const handleToggle = async (
     field: "isCreator" | "isSpace" | "isEquipment",
     currentValue: boolean
   ) => {
     const phoneOk = isValidPhone(data.phone);
-
-    // Trying to turn ON without valid phone → block and show error
     if (!currentValue && !phoneOk) {
-      setPhoneError(
-        data.phone.length === 0
+      setErrors((prev) => ({
+        ...prev,
+        phone: data.phone.length === 0
           ? "Add your phone number first — required to list."
-          : "Enter a valid Indian mobile number (starts with 6–9)."
-      );
+          : "Enter a valid Indian mobile number (starts with 6–9).",
+      }));
       return;
     }
 
-    const turningOff = currentValue; // they're toggling what was ON → turning it off
+    const turningOff = currentValue;
     const updated: ProfileData = { ...data, [field]: !currentValue };
     setData(updated);
 
-    // If toggling OFF → immediately save to DB so listing disappears right away
     if (turningOff) {
       setSaving(true);
       setSaveError(null);
@@ -525,7 +624,6 @@ export default function ProfilePage() {
       setSaving(false);
       if (result?.error) {
         setSaveError(result.error);
-        // Revert the toggle if save failed
         setData((prev) => ({ ...prev, [field]: currentValue }));
       }
     }
@@ -537,33 +635,34 @@ export default function ProfilePage() {
   // ── Space helpers ──
   const addSpace = () =>
     setData((p) => ({ ...p, spaces: [...p.spaces, EMPTY_SPACE()] }));
-
   const removeSpace = (id: string) =>
     setData((p) => ({ ...p, spaces: p.spaces.filter((s) => s.id !== id) }));
-
   const updateSpace = (id: string, key: keyof SpaceItem, val: string | string[]) =>
-    setData((p) => ({
-      ...p,
-      spaces: p.spaces.map((s) => s.id === id ? { ...s, [key]: val } : s),
-    }));
+    setData((p) => ({ ...p, spaces: p.spaces.map((s) => s.id === id ? { ...s, [key]: val } : s) }));
 
   // ── Equipment helpers ──
   const addEquipment = () =>
     setData((p) => ({ ...p, equipment: [...p.equipment, EMPTY_EQUIPMENT()] }));
-
   const removeEquipment = (id: string) =>
     setData((p) => ({ ...p, equipment: p.equipment.filter((e) => e.id !== id) }));
-
   const updateEquipment = (id: string, key: keyof EquipmentItem, val: string) =>
     setData((p) => ({ ...p, equipment: p.equipment.map((e) => e.id === id ? { ...e, [key]: val } : e) }));
 
   // ── Save ──
   const handleSave = async () => {
-    // Block save if phone is present but invalid
-    if (data.phone && !isValidPhone(data.phone)) {
-      setPhoneError("Enter a valid 10-digit Indian mobile number.");
+    setAttempted(true);
+    const validationErrors = validate(data);
+    setErrors(validationErrors);
+
+    if (hasErrors(validationErrors)) {
+      // Scroll to first error
+      setTimeout(() => {
+        const firstError = document.querySelector("[data-error='true']");
+        firstError?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
       return;
     }
+
     setSaving(true);
     setSaveError(null);
     const result = await saveProfile(data);
@@ -579,6 +678,7 @@ export default function ProfilePage() {
   const phoneOk = isValidPhone(data.phone);
   const listingToggled = data.isCreator || data.isSpace || data.isEquipment;
 
+  // ── Completion score (unchanged logic) ──
   const checks = [
     !!data.bio,
     !!data.city,
@@ -589,19 +689,21 @@ export default function ProfilePage() {
   ];
   const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
 
+  // ── Summary message for save bar ──
+  const errorCount = [
+    errors.phone, errors.city, errors.bio, errors.creatorCategory, errors.startingPrice,
+    errors.equipmentAddressLine, errors.equipmentArea, errors.equipmentCity, errors.equipmentPincode,
+    ...Object.values(errors.spaces ?? {}).flatMap(e => Object.values(e)),
+    ...Object.values(errors.equipment ?? {}).flatMap(e => Object.values(e)),
+  ].filter(Boolean).length;
+
   const validationMsg = saveError
     ? `❌ ${saveError}`
-    : listingToggled && !phoneOk
-    ? "⚠️ Valid phone number required to be listed."
-    : !data.bio
-    ? "⚠️ Bio is required to book or be listed."
-    : data.isSpace && data.spaces.length === 0
-    ? "⚠️ Add at least one space."
-    : data.isEquipment && data.equipment.length === 0
-    ? "⚠️ Add at least one equipment item."
-    : completion < 100
-    ? "Fill required fields to go live."
-    : "Profile is complete ✓";
+    : attempted && errorCount > 0
+    ? `⚠️ ${errorCount} required field${errorCount > 1 ? "s" : ""} missing — fix above to save.`
+    : completion === 100
+    ? "Profile is complete ✓"
+    : "Fill required fields to go live.";
 
   if (loading) {
     return (
@@ -660,40 +762,45 @@ export default function ProfilePage() {
           <Row cols={3}>
             <F label="Full Name" value={user?.fullName ?? "—"} readOnly hint="From your login — cannot be changed here" />
             <F label="Email Address" value={user?.primaryEmailAddress?.emailAddress ?? "—"} readOnly hint="From your login — cannot be changed here" />
-            <F
-              label="Phone Number"
-              value={data.phone}
-              onChange={handlePhoneChange}
-              type="tel"
-              placeholder="9876543210"
-              required={listingToggled}
-              error={phoneError || undefined}
-              hint={
-                !phoneError
-                  ? listingToggled
-                    ? "Required to be listed — 10-digit Indian mobile"
-                    : "Optional for bookers — 10-digit Indian mobile"
-                  : undefined
-              }
-            />
+            <div data-error={!!errors.phone || undefined}>
+              <F
+                label="Phone Number"
+                value={data.phone}
+                onChange={handlePhoneChange}
+                type="tel"
+                placeholder="9876543210"
+                required={listingToggled}
+                error={errors.phone}
+                hint={
+                  !errors.phone
+                    ? listingToggled
+                      ? "Required to be listed — 10-digit Indian mobile"
+                      : "Optional for bookers — 10-digit Indian mobile"
+                    : undefined
+                }
+              />
+            </div>
           </Row>
         </Section>
 
         {/* ── About ── */}
         <Section icon="✏️" title="About You">
           <Row cols={3} mb="0.875rem">
-            <CitySelect value={data.city} onChange={set("city")} required />
+            <div data-error={!!errors.city || undefined}>
+              <CitySelect value={data.city} onChange={set("city")} required error={errors.city} />
+            </div>
             <F label="Instagram" value={data.instagramHandle} onChange={set("instagramHandle")} placeholder="@yourhandle" />
             <F label="Portfolio / Website" value={data.portfolioUrl} onChange={set("portfolioUrl")} placeholder="https://yoursite.com" />
           </Row>
-          <F label="Bio" value={data.bio} onChange={set("bio")} as="textarea" required
-            placeholder="Tell people who you are — works whether you're here to book, create, or host. Required to do anything on CultureJeevan."
-            hint="Required for everyone. Appears on your public profile and booking requests." />
+          <div data-error={!!errors.bio || undefined}>
+            <F label="Bio" value={data.bio} onChange={set("bio")} as="textarea" required error={errors.bio}
+              placeholder="Tell people who you are — works whether you're here to book, create, or host. Required to do anything on CultureJeevan."
+              hint={!errors.bio ? "Required for everyone. Appears on your public profile and booking requests." : undefined} />
+          </div>
         </Section>
 
         {/* ── Roles ── */}
         <Section icon="⚡" title="Your Roles">
-          {/* Phone warning banner — shown when phone is missing/invalid */}
           {!phoneOk && (
             <div style={{
               display: "flex", alignItems: "flex-start", gap: "0.6rem",
@@ -702,7 +809,7 @@ export default function ProfilePage() {
             }}>
               <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>🔒</span>
               <p style={{ fontSize: "0.75rem", color: "#C0392B", margin: 0, lineHeight: 1.5, fontWeight: 600 }}>
-                Add a valid 10-digit phone number above before turning on any listing toggle. Without it, clients cannot reach you and your listing will not go live.
+                Add a valid 10-digit phone number above before turning on any listing toggle.
               </p>
             </div>
           )}
@@ -710,36 +817,10 @@ export default function ProfilePage() {
             Everyone can book by default. Toggle on to also list yourself — each unlocks a section below and a dedicated dashboard.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
-            <TogglePill
-              checked={data.isCreator}
-              onChange={() => handleToggle("isCreator", data.isCreator)}
-              icon="🎨"
-              label="Creative Professional"
-              sub="Photographer, Musician, Editor, Comedian, Poet etc."
-              disabled={!data.isCreator && !phoneOk}
-              disabledReason="Valid phone required to list"
-            />
-            <TogglePill
-              checked={data.isSpace}
-              onChange={() => handleToggle("isSpace", data.isSpace)}
-              icon="🏛️"
-              label="Space Owner"
-              sub="Studio, Café, Rooftop, Podcast Booth — list for bookings"
-              disabled={!data.isSpace && !phoneOk}
-              disabledReason="Valid phone required to list"
-            />
-            <TogglePill
-              checked={data.isEquipment}
-              onChange={() => handleToggle("isEquipment", data.isEquipment)}
-              icon="📷"
-              label="Equipment Owner"
-              sub="Camera, Lens, Lighting, Drone — rent out your gear"
-              disabled={!data.isEquipment && !phoneOk}
-              disabledReason="Valid phone required to list"
-            />
+            <TogglePill checked={data.isCreator} onChange={() => handleToggle("isCreator", data.isCreator)} icon="🎨" label="Creative Professional" sub="Photographer, Musician, Editor, Comedian, Poet etc." disabled={!data.isCreator && !phoneOk} disabledReason="Valid phone required to list" />
+            <TogglePill checked={data.isSpace} onChange={() => handleToggle("isSpace", data.isSpace)} icon="🏛️" label="Space Owner" sub="Studio, Café, Rooftop, Podcast Booth — list for bookings" disabled={!data.isSpace && !phoneOk} disabledReason="Valid phone required to list" />
+            <TogglePill checked={data.isEquipment} onChange={() => handleToggle("isEquipment", data.isEquipment)} icon="📷" label="Equipment Owner" sub="Camera, Lens, Lighting, Drone — rent out your gear" disabled={!data.isEquipment && !phoneOk} disabledReason="Valid phone required to list" />
           </div>
-
-          {/* Auto-saving indicator */}
           {saving && (
             <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: "0.75rem 0 0", textAlign: "center" }}>
               Updating listing status…
@@ -752,11 +833,15 @@ export default function ProfilePage() {
           <Section icon="🎨" title="Creator Profile" accent
             action={<Link href="/creator-dashboard" style={{ fontSize: "0.7rem", fontWeight: 700, color: "#C4703A", textDecoration: "none" }}>Creator Dashboard →</Link>}>
             <Row cols={3} mb="0.875rem">
-              <F label="Category" value={data.creatorCategory} onChange={set("creatorCategory")} as="select" required>
-                <option value="">Select category</option>
-                {CREATOR_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </F>
-              <F label="Starting Price (₹)" value={data.startingPrice} onChange={set("startingPrice")} type="number" placeholder="e.g. 2500" required />
+              <div data-error={!!errors.creatorCategory || undefined}>
+                <F label="Category" value={data.creatorCategory} onChange={set("creatorCategory")} as="select" required error={errors.creatorCategory}>
+                  <option value="">Select category</option>
+                  {CREATOR_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </F>
+              </div>
+              <div data-error={!!errors.startingPrice || undefined}>
+                <F label="Starting Price (₹)" value={data.startingPrice} onChange={set("startingPrice")} type="number" placeholder="e.g. 2500" required error={errors.startingPrice} />
+              </div>
               <F label="Experience" value={data.experience} onChange={set("experience")} as="select">
                 <option value="">Select years</option>
                 {EXPERIENCE_OPTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
@@ -782,18 +867,16 @@ export default function ProfilePage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "0.875rem" }}>
                 {data.spaces.map((space, i) => (
-                  <SpaceCard key={space.id} item={space} index={i} onChange={updateSpace} onRemove={removeSpace} />
+                  <SpaceCard
+                    key={space.id} item={space} index={i}
+                    onChange={updateSpace} onRemove={removeSpace}
+                    errors={errors.spaces?.[space.id]}
+                  />
                 ))}
               </div>
             )}
 
-            <button type="button" onClick={addSpace} style={{
-              width: "100%", padding: "0.7rem", borderRadius: "10px",
-              border: "1.5px dashed #C4703A", background: "rgba(196,112,58,0.04)",
-              color: "#C4703A", fontSize: "0.875rem", fontWeight: 700,
-              cursor: "pointer", transition: "background 0.2s", display: "flex",
-              alignItems: "center", justifyContent: "center", gap: "0.4rem",
-            }}>
+            <button type="button" onClick={addSpace} style={{ width: "100%", padding: "0.7rem", borderRadius: "10px", border: "1.5px dashed #C4703A", background: "rgba(196,112,58,0.04)", color: "#C4703A", fontSize: "0.875rem", fontWeight: 700, cursor: "pointer", transition: "background 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
               + Add Space
             </button>
 
@@ -811,12 +894,20 @@ export default function ProfilePage() {
                 Renters will coordinate pickup or delivery from this address. Your phone number (above) is also required.
               </p>
               <Row cols={3} mb="0.75rem">
-                <F label="Street / Building" value={data.equipmentAddressLine} onChange={set("equipmentAddressLine")} placeholder="e.g. 4B, Aliganj Lane" required />
-                <F label="Area / Locality" value={data.equipmentArea} onChange={set("equipmentArea")} placeholder="e.g. Aliganj" required />
-                <CitySelect value={data.equipmentCity} onChange={set("equipmentCity")} required />
+                <div data-error={!!errors.equipmentAddressLine || undefined}>
+                  <F label="Street / Building" value={data.equipmentAddressLine} onChange={set("equipmentAddressLine")} placeholder="e.g. 4B, Aliganj Lane" required error={errors.equipmentAddressLine} />
+                </div>
+                <div data-error={!!errors.equipmentArea || undefined}>
+                  <F label="Area / Locality" value={data.equipmentArea} onChange={set("equipmentArea")} placeholder="e.g. Aliganj" required error={errors.equipmentArea} />
+                </div>
+                <div data-error={!!errors.equipmentCity || undefined}>
+                  <CitySelect value={data.equipmentCity} onChange={set("equipmentCity")} required error={errors.equipmentCity} />
+                </div>
               </Row>
               <Row cols={2} mb="0">
-                <F label="Pincode" value={data.equipmentPincode} onChange={set("equipmentPincode")} placeholder="e.g. 226022" type="number" required />
+                <div data-error={!!errors.equipmentPincode || undefined}>
+                  <F label="Pincode" value={data.equipmentPincode} onChange={set("equipmentPincode")} placeholder="e.g. 226022" type="number" required error={errors.equipmentPincode} />
+                </div>
                 <F label="Alternate Phone (optional)" value={data.equipmentPhone} onChange={set("equipmentPhone")} type="tel" placeholder="If different from account phone" />
               </Row>
             </SubBox>
@@ -830,18 +921,16 @@ export default function ProfilePage() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem", marginBottom: "0.875rem" }}>
                 {data.equipment.map((item, i) => (
-                  <EquipmentCard key={item.id} item={item} index={i} onChange={updateEquipment} onRemove={removeEquipment} />
+                  <EquipmentCard
+                    key={item.id} item={item} index={i}
+                    onChange={updateEquipment} onRemove={removeEquipment}
+                    errors={errors.equipment?.[item.id]}
+                  />
                 ))}
               </div>
             )}
 
-            <button type="button" onClick={addEquipment} style={{
-              width: "100%", padding: "0.7rem", borderRadius: "10px",
-              border: "1.5px dashed #C4703A", background: "rgba(196,112,58,0.04)",
-              color: "#C4703A", fontSize: "0.875rem", fontWeight: 700,
-              cursor: "pointer", transition: "background 0.2s", display: "flex",
-              alignItems: "center", justifyContent: "center", gap: "0.4rem",
-            }}>
+            <button type="button" onClick={addEquipment} style={{ width: "100%", padding: "0.7rem", borderRadius: "10px", border: "1.5px dashed #C4703A", background: "rgba(196,112,58,0.04)", color: "#C4703A", fontSize: "0.875rem", fontWeight: 700, cursor: "pointer", transition: "background 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
               + Add Equipment Item
             </button>
 
@@ -852,7 +941,7 @@ export default function ProfilePage() {
         )}
 
         {/* ── Save bar ── */}
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#fff", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.25rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#fff", border: `1px solid ${attempted && errorCount > 0 ? "rgba(192,57,43,0.25)" : "#E8DED0"}`, borderRadius: "12px", padding: "1rem 1.25rem", marginTop: "0.5rem", flexWrap: "wrap", transition: "border-color 0.2s" }}>
           <button onClick={handleSave} disabled={saving} style={{
             padding: "0.72rem 2rem", background: saved ? "#2E7D32" : "#C4703A",
             color: "#FAF7F2", border: "none", borderRadius: "8px", fontSize: "0.875rem", fontWeight: 700,
@@ -860,7 +949,7 @@ export default function ProfilePage() {
           }}>
             {saving ? "Saving…" : saved ? "✓ Saved" : "Save Profile"}
           </button>
-          <p style={{ fontSize: "0.75rem", color: saveError ? "#C0392B" : completion === 100 ? "#2E7D32" : "#9B7B60", margin: 0 }}>
+          <p style={{ fontSize: "0.75rem", color: saveError ? "#C0392B" : attempted && errorCount > 0 ? "#C0392B" : completion === 100 ? "#2E7D32" : "#9B7B60", margin: 0, fontWeight: attempted && errorCount > 0 ? 600 : 400 }}>
             {validationMsg}
           </p>
         </div>
