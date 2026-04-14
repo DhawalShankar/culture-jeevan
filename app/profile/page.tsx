@@ -124,6 +124,10 @@ const INITIAL_DATA: ProfileData = {
   equipment: [],
 };
 
+// ─── Phone validation ─────────────────────────────────────────────────────────
+// Must start with 6–9 and be exactly 10 digits (Indian mobile)
+const isValidPhone = (phone: string) => /^[6-9]\d{9}$/.test(phone.trim());
+
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 const SELECT_ARROW = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239B7B60' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`;
@@ -156,25 +160,25 @@ const lbl: React.CSSProperties = {
 
 function F({
   label, value, onChange, type = "text", placeholder = "",
-  as = "input", required = false, readOnly = false, hint, children, min,
+  as = "input", required = false, readOnly = false, hint, children, min, error,
 }: {
   label: string; value: string; onChange?: (v: string) => void;
   type?: string; placeholder?: string;
   as?: "input" | "textarea" | "select";
   required?: boolean; readOnly?: boolean;
   hint?: string; children?: React.ReactNode;
-  min?: string;
+  min?: string; error?: string;
 }) {
   const [focused, setFocused] = useState(false);
-  const bc = focused ? "#C4703A" : "#E8DED0";
+  const hasError = !!error;
+  const bc = hasError ? "#C0392B" : focused ? "#C4703A" : "#E8DED0";
   const h = { onFocus: () => setFocused(true), onBlur: () => setFocused(false) };
 
-  // For number inputs, clamp to >= 0 on change
   const handleChange = (raw: string) => {
     if (!onChange) return;
     if (type === "number") {
       const num = parseFloat(raw);
-      if (raw !== "" && num < 0) return; // block negative
+      if (raw !== "" && num < 0) return;
     }
     onChange(raw);
   };
@@ -203,7 +207,14 @@ function F({
           style={{ ...baseInput, border: `1.5px solid ${bc}`, ...(readOnly ? { background: "#F0EAE2", color: "#7A5C42", cursor: "not-allowed" } : {}) }}
         />
       )}
-      {hint && <p style={{ fontSize: "0.68rem", color: "#9B7B60", margin: "0.3rem 0 0", lineHeight: 1.4 }}>{hint}</p>}
+      {hasError && (
+        <p style={{ fontSize: "0.68rem", color: "#C0392B", margin: "0.3rem 0 0", lineHeight: 1.4, fontWeight: 600 }}>
+          {error}
+        </p>
+      )}
+      {!hasError && hint && (
+        <p style={{ fontSize: "0.68rem", color: "#9B7B60", margin: "0.3rem 0 0", lineHeight: 1.4 }}>{hint}</p>
+      )}
     </div>
   );
 }
@@ -269,26 +280,40 @@ function SubBox({ label, children }: { label: string; children: React.ReactNode 
 
 // ─── TogglePill ───────────────────────────────────────────────────────────────
 
-function TogglePill({ checked, onChange, icon, label, sub }: {
+function TogglePill({ checked, onChange, icon, label, sub, disabled, disabledReason }: {
   checked: boolean; onChange: (v: boolean) => void; icon: string; label: string; sub: string;
+  disabled?: boolean; disabledReason?: string;
 }) {
   return (
-    <button type="button" onClick={() => onChange(!checked)} style={{
-      display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.9rem 1.1rem",
-      borderRadius: "12px", cursor: "pointer",
-      border: checked ? "1.5px solid #C4703A" : "1.5px solid #E8DED0",
-      background: checked ? "rgba(196,112,58,0.05)" : "#FDFAF7",
-      transition: "all 0.2s", textAlign: "left", width: "100%",
-    }}>
-      <span style={{ width: "38px", height: "38px", borderRadius: "9px", flexShrink: 0, background: checked ? "rgba(196,112,58,0.12)" : "#F0E8DC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>{icon}</span>
-      <div style={{ flex: 1, textAlign: "left" }}>
-        <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.12rem" }}>{label}</p>
-        <p style={{ fontSize: "0.73rem", color: "#9B7B60", margin: 0, lineHeight: 1.35 }}>{sub}</p>
-      </div>
-      <div style={{ width: "38px", height: "21px", borderRadius: "100px", flexShrink: 0, background: checked ? "#C4703A" : "#E8DED0", position: "relative", transition: "background 0.2s" }}>
-        <div style={{ position: "absolute", top: "2.5px", left: checked ? "19px" : "2.5px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.18)" }} />
-      </div>
-    </button>
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => !disabled && onChange(!checked)}
+        title={disabled ? disabledReason : undefined}
+        style={{
+          display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.9rem 1.1rem",
+          borderRadius: "12px", cursor: disabled ? "not-allowed" : "pointer",
+          border: checked ? "1.5px solid #C4703A" : "1.5px solid #E8DED0",
+          background: disabled ? "#F5F0EA" : checked ? "rgba(196,112,58,0.05)" : "#FDFAF7",
+          transition: "all 0.2s", textAlign: "left", width: "100%",
+          opacity: disabled ? 0.6 : 1,
+        }}
+      >
+        <span style={{ width: "38px", height: "38px", borderRadius: "9px", flexShrink: 0, background: checked ? "rgba(196,112,58,0.12)" : "#F0E8DC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>{icon}</span>
+        <div style={{ flex: 1, textAlign: "left" }}>
+          <p style={{ fontSize: "0.875rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.12rem" }}>{label}</p>
+          <p style={{ fontSize: "0.73rem", color: "#9B7B60", margin: 0, lineHeight: 1.35 }}>{sub}</p>
+        </div>
+        <div style={{ width: "38px", height: "21px", borderRadius: "100px", flexShrink: 0, background: checked ? "#C4703A" : "#E8DED0", position: "relative", transition: "background 0.2s" }}>
+          <div style={{ position: "absolute", top: "2.5px", left: checked ? "19px" : "2.5px", width: "16px", height: "16px", borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.18)" }} />
+        </div>
+      </button>
+      {disabled && (
+        <p style={{ fontSize: "0.65rem", color: "#C0392B", margin: "0.3rem 0 0 0.2rem", fontWeight: 600 }}>
+          {disabledReason}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -355,7 +380,6 @@ function SpaceCard({
 
   return (
     <div style={{ background: "#FDFAF7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "1rem 1.1rem", position: "relative" }}>
-      {/* Card header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
         <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "#C4703A", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Space {index + 1}{item.spaceName ? ` — ${item.spaceName}` : ""}
@@ -367,7 +391,6 @@ function SpaceCard({
         }}>Remove</button>
       </div>
 
-      {/* Basic info */}
       <Row cols={3} mb="0.875rem">
         <F label="Space Name" value={item.spaceName} onChange={upd("spaceName")} placeholder="e.g. Lumina Photography Studio" required />
         <F label="Space Type" value={item.spaceType} onChange={upd("spaceType")} as="select" required>
@@ -377,7 +400,6 @@ function SpaceCard({
         <F label="Max Capacity (people)" value={item.capacity} onChange={upd("capacity")} type="number" placeholder="e.g. 10" />
       </Row>
 
-      {/* Address */}
       <SubBox label="📍 Address *">
         <Row cols={3} mb="0.75rem">
           <F label="Street / Building" value={item.addressLine1} onChange={upd("addressLine1")} placeholder="e.g. 12A, MG Road" required />
@@ -390,7 +412,6 @@ function SpaceCard({
         </Row>
       </SubBox>
 
-      {/* Pricing */}
       <SubBox label="💰 Pricing (₹) *">
         <Row cols={3} mb="0.75rem">
           <F label="Per Hour" value={item.hourlyRate} onChange={upd("hourlyRate")} type="number" placeholder="e.g. 1200" required />
@@ -402,13 +423,11 @@ function SpaceCard({
         </Row>
       </SubBox>
 
-      {/* Description */}
       <Row cols={1} mb="0.875rem">
         <F label="Space Description" value={item.spaceDescription} onChange={upd("spaceDescription")} as="textarea"
           placeholder="What makes your space special — vibe, lighting, ideal use, what shoots it's perfect for..." />
       </Row>
 
-      {/* Amenities */}
       <div style={{ marginBottom: "0.875rem" }}>
         <label style={lbl}>Amenities</label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.45rem" }}>
@@ -423,7 +442,6 @@ function SpaceCard({
         </div>
       </div>
 
-      {/* Rules */}
       <Row cols={1} mb="0">
         <F label="House Rules" value={item.spaceRules} onChange={upd("spaceRules")} as="textarea"
           placeholder="e.g. No footwear inside, No outside food, Music allowed till 9PM, No smoking on premises..."
@@ -441,6 +459,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string>("");
 
   const [data, setData] = useState<ProfileData>(INITIAL_DATA);
 
@@ -449,6 +468,68 @@ export default function ProfilePage() {
       if (saved) setData(saved);
     }).finally(() => setLoading(false));
   }, []);
+
+  // ── Phone change handler — validates and auto-disables toggles if invalid ──
+  const handlePhoneChange = (value: string) => {
+    // Strip non-digits for validation but store raw for UX
+    const digits = value.replace(/\D/g, "");
+
+    setData((prev) => {
+      const phoneOk = isValidPhone(digits);
+      // If phone becomes invalid and any listing toggle is on, force them off
+      const shouldForceOff = !phoneOk && (prev.isCreator || prev.isSpace || prev.isEquipment);
+      return {
+        ...prev,
+        phone: digits, // store only digits
+        ...(shouldForceOff ? { isCreator: false, isSpace: false, isEquipment: false } : {}),
+      };
+    });
+
+    if (digits.length === 0) {
+      setPhoneError("");
+    } else if (digits.length < 10) {
+      setPhoneError("Phone number must be 10 digits.");
+    } else if (!isValidPhone(digits)) {
+      setPhoneError("Enter a valid Indian mobile number (starts with 6–9).");
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  // ── Toggle handler — blocks if phone invalid, auto-saves on toggle OFF ──
+  const handleToggle = async (
+    field: "isCreator" | "isSpace" | "isEquipment",
+    currentValue: boolean
+  ) => {
+    const phoneOk = isValidPhone(data.phone);
+
+    // Trying to turn ON without valid phone → block and show error
+    if (!currentValue && !phoneOk) {
+      setPhoneError(
+        data.phone.length === 0
+          ? "Add your phone number first — required to list."
+          : "Enter a valid Indian mobile number (starts with 6–9)."
+      );
+      return;
+    }
+
+    const turningOff = currentValue; // they're toggling what was ON → turning it off
+    const updated: ProfileData = { ...data, [field]: !currentValue };
+    setData(updated);
+
+    // If toggling OFF → immediately save to DB so listing disappears right away
+    if (turningOff) {
+      setSaving(true);
+      setSaveError(null);
+      const result = await saveProfile(updated);
+      setSaving(false);
+      if (result?.error) {
+        setSaveError(result.error);
+        // Revert the toggle if save failed
+        setData((prev) => ({ ...prev, [field]: currentValue }));
+      }
+    }
+  };
 
   const set = (key: keyof ProfileData) => (v: string | boolean) =>
     setData((p) => ({ ...p, [key]: v }));
@@ -478,6 +559,11 @@ export default function ProfilePage() {
 
   // ── Save ──
   const handleSave = async () => {
+    // Block save if phone is present but invalid
+    if (data.phone && !isValidPhone(data.phone)) {
+      setPhoneError("Enter a valid 10-digit Indian mobile number.");
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     const result = await saveProfile(data);
@@ -490,22 +576,31 @@ export default function ProfilePage() {
     }
   };
 
+  const phoneOk = isValidPhone(data.phone);
+  const listingToggled = data.isCreator || data.isSpace || data.isEquipment;
+
   const checks = [
-    !!data.bio, !!data.city,
-    (data.isCreator || data.isSpace || data.isEquipment) ? !!data.phone : true,
+    !!data.bio,
+    !!data.city,
+    listingToggled ? phoneOk : true,
     data.isCreator ? !!(data.creatorCategory && data.startingPrice) : true,
     data.isSpace ? data.spaces.length > 0 && data.spaces.every(s => !!(s.spaceName && s.addressLine1 && s.hourlyRate)) : true,
     data.isEquipment ? !!(data.equipmentAddressLine && data.equipmentCity && data.equipmentPincode && data.equipment.length > 0) : true,
   ];
   const completion = Math.round((checks.filter(Boolean).length / checks.length) * 100);
+
   const validationMsg = saveError
     ? `❌ ${saveError}`
-    : (data.isCreator || data.isSpace || data.isEquipment) && !data.phone
-    ? "⚠️ Phone required to list as creator, space, or equipment."
-    : !data.bio ? "⚠️ Bio is required to book or be listed."
-    : data.isSpace && data.spaces.length === 0 ? "⚠️ Add at least one space."
-    : data.isEquipment && data.equipment.length === 0 ? "⚠️ Add at least one equipment item."
-    : completion < 100 ? "Fill required fields to go live."
+    : listingToggled && !phoneOk
+    ? "⚠️ Valid phone number required to be listed."
+    : !data.bio
+    ? "⚠️ Bio is required to book or be listed."
+    : data.isSpace && data.spaces.length === 0
+    ? "⚠️ Add at least one space."
+    : data.isEquipment && data.equipment.length === 0
+    ? "⚠️ Add at least one equipment item."
+    : completion < 100
+    ? "Fill required fields to go live."
     : "Profile is complete ✓";
 
   if (loading) {
@@ -565,9 +660,22 @@ export default function ProfilePage() {
           <Row cols={3}>
             <F label="Full Name" value={user?.fullName ?? "—"} readOnly hint="From your login — cannot be changed here" />
             <F label="Email Address" value={user?.primaryEmailAddress?.emailAddress ?? "—"} readOnly hint="From your login — cannot be changed here" />
-            <F label="Phone Number" value={data.phone} onChange={set("phone")} type="tel" placeholder="+91 98765 43210"
-              required={data.isCreator || data.isSpace || data.isEquipment}
-              hint={(data.isCreator || data.isSpace || data.isEquipment) ? "Required to be listed" : "Optional for bookers"} />
+            <F
+              label="Phone Number"
+              value={data.phone}
+              onChange={handlePhoneChange}
+              type="tel"
+              placeholder="9876543210"
+              required={listingToggled}
+              error={phoneError || undefined}
+              hint={
+                !phoneError
+                  ? listingToggled
+                    ? "Required to be listed — 10-digit Indian mobile"
+                    : "Optional for bookers — 10-digit Indian mobile"
+                  : undefined
+              }
+            />
           </Row>
         </Section>
 
@@ -585,17 +693,58 @@ export default function ProfilePage() {
 
         {/* ── Roles ── */}
         <Section icon="⚡" title="Your Roles">
+          {/* Phone warning banner — shown when phone is missing/invalid */}
+          {!phoneOk && (
+            <div style={{
+              display: "flex", alignItems: "flex-start", gap: "0.6rem",
+              background: "rgba(192,57,43,0.06)", border: "1px solid rgba(192,57,43,0.2)",
+              borderRadius: "10px", padding: "0.75rem 1rem", marginBottom: "1rem",
+            }}>
+              <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>🔒</span>
+              <p style={{ fontSize: "0.75rem", color: "#C0392B", margin: 0, lineHeight: 1.5, fontWeight: 600 }}>
+                Add a valid 10-digit phone number above before turning on any listing toggle. Without it, clients cannot reach you and your listing will not go live.
+              </p>
+            </div>
+          )}
           <p style={{ fontSize: "0.78rem", color: "#7A5C42", margin: "0 0 0.875rem", lineHeight: 1.6 }}>
             Everyone can book by default. Toggle on to also list yourself — each unlocks a section below and a dedicated dashboard.
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.75rem" }}>
-            <TogglePill checked={data.isCreator} onChange={set("isCreator") as (v: boolean) => void}
-              icon="🎨" label="Creative Professional" sub="Photographer, Musician, Editor, Comedian, Poet and more" />
-            <TogglePill checked={data.isSpace} onChange={set("isSpace") as (v: boolean) => void}
-              icon="🏛️" label="Space Owner" sub="Studio, Café, Rooftop, Podcast Booth — list for bookings" />
-            <TogglePill checked={data.isEquipment} onChange={set("isEquipment") as (v: boolean) => void}
-              icon="📷" label="Equipment Owner" sub="Camera, Lens, Lighting, Drone — rent out your gear" />
+            <TogglePill
+              checked={data.isCreator}
+              onChange={() => handleToggle("isCreator", data.isCreator)}
+              icon="🎨"
+              label="Creative Professional"
+              sub="Photographer, Musician, Editor, Comedian, Poet etc."
+              disabled={!data.isCreator && !phoneOk}
+              disabledReason="Valid phone required to list"
+            />
+            <TogglePill
+              checked={data.isSpace}
+              onChange={() => handleToggle("isSpace", data.isSpace)}
+              icon="🏛️"
+              label="Space Owner"
+              sub="Studio, Café, Rooftop, Podcast Booth — list for bookings"
+              disabled={!data.isSpace && !phoneOk}
+              disabledReason="Valid phone required to list"
+            />
+            <TogglePill
+              checked={data.isEquipment}
+              onChange={() => handleToggle("isEquipment", data.isEquipment)}
+              icon="📷"
+              label="Equipment Owner"
+              sub="Camera, Lens, Lighting, Drone — rent out your gear"
+              disabled={!data.isEquipment && !phoneOk}
+              disabledReason="Valid phone required to list"
+            />
           </div>
+
+          {/* Auto-saving indicator */}
+          {saving && (
+            <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: "0.75rem 0 0", textAlign: "center" }}>
+              Updating listing status…
+            </p>
+          )}
         </Section>
 
         {/* ── Creator Section ── */}
@@ -625,11 +774,7 @@ export default function ProfilePage() {
             action={<Link href="/spaces/dashboard" style={{ fontSize: "0.7rem", fontWeight: 700, color: "#C4703A", textDecoration: "none" }}>Space Dashboard →</Link>}>
 
             {data.spaces.length === 0 ? (
-              <div style={{
-                textAlign: "center", padding: "2rem 1rem",
-                border: "1.5px dashed #E8DED0", borderRadius: "12px",
-                marginBottom: "0.875rem",
-              }}>
+              <div style={{ textAlign: "center", padding: "2rem 1rem", border: "1.5px dashed #E8DED0", borderRadius: "12px", marginBottom: "0.875rem" }}>
                 <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>🏛️</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#7A5C42", margin: "0 0 0.25rem" }}>No spaces listed yet</p>
                 <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>Add your studio, café, rooftop, or any creative space below</p>
@@ -652,11 +797,7 @@ export default function ProfilePage() {
               + Add Space
             </button>
 
-            <div style={{
-              marginTop: "1rem", padding: "0.8rem 1rem", borderRadius: "10px",
-              background: "rgba(196,112,58,0.05)", border: "1px solid rgba(196,112,58,0.15)",
-              fontSize: "0.75rem", color: "#7A5C42", lineHeight: 1.6,
-            }}>
+            <div style={{ marginTop: "1rem", padding: "0.8rem 1rem", borderRadius: "10px", background: "rgba(196,112,58,0.05)", border: "1px solid rgba(196,112,58,0.15)", fontSize: "0.75rem", color: "#7A5C42", lineHeight: 1.6 }}>
               💡 Each space gets its own listing page. Clients can browse, compare, and book directly. You can manage availability and bookings from the Space Dashboard.
             </div>
           </Section>
@@ -681,11 +822,7 @@ export default function ProfilePage() {
             </SubBox>
 
             {data.equipment.length === 0 ? (
-              <div style={{
-                textAlign: "center", padding: "2rem 1rem",
-                border: "1.5px dashed #E8DED0", borderRadius: "12px",
-                marginBottom: "0.875rem",
-              }}>
+              <div style={{ textAlign: "center", padding: "2rem 1rem", border: "1.5px dashed #E8DED0", borderRadius: "12px", marginBottom: "0.875rem" }}>
                 <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.5rem" }}>📦</span>
                 <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#7A5C42", margin: "0 0 0.25rem" }}>No equipment listed yet</p>
                 <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>Add your gear below — cameras, lenses, lighting, drones, audio and more</p>
@@ -708,12 +845,8 @@ export default function ProfilePage() {
               + Add Equipment Item
             </button>
 
-            <div style={{
-              marginTop: "1rem", padding: "0.8rem 1rem", borderRadius: "10px",
-              background: "rgba(196,112,58,0.05)", border: "1px solid rgba(196,112,58,0.15)",
-              fontSize: "0.75rem", color: "#7A5C42", lineHeight: 1.6,
-            }}>
-              💡 All rentals are platform-protected. Always coordinate and complete transactions on CultureJeevan. You'll be able to set availability and manage rental requests from your dashboard once your listing is live.
+            <div style={{ marginTop: "1rem", padding: "0.8rem 1rem", borderRadius: "10px", background: "rgba(196,112,58,0.05)", border: "1px solid rgba(196,112,58,0.15)", fontSize: "0.75rem", color: "#7A5C42", lineHeight: 1.6 }}>
+              💡 All rentals are platform-protected. Always coordinate and complete transactions on CultureJeevan.
             </div>
           </Section>
         )}

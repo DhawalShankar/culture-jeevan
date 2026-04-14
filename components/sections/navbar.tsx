@@ -334,16 +334,16 @@ export default function Navbar() {
           <div style={{ display: "flex", alignItems: "center", gap: "0.15rem" }}>
 
             {/* Bell */}
-            <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
+            {/* <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
               <BellIcon />
-            </IconButton>
+            </IconButton> */}
 
             {/* Cart (logged-in only) */}
-            {isLoaded && user && (
+            {/* {isLoaded && user && (
               <IconButton href="/cart" label="My Cart" count={MOCK_CART_COUNT}>
                 <CartIcon />
               </IconButton>
-            )}
+            )} */}
 
             {/* Hamburger */}
             <button

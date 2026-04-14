@@ -11,7 +11,7 @@ const FOOTER_LINKS = {
   ],
   Support: [
     { label: "Help Center", href: "/help" },
-    { label: "Contact Us", href: "/contact" },
+    { label: "Contact Us", href: "mailto:cosmoindiaprakashan@gmail.com" },
     { label: "Cancellation Policy", href: "/cancellation" },
     { label: "Trust & Safety", href: "/trust" },
   ],

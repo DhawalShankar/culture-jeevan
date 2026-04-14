@@ -147,7 +147,6 @@ export default function SpacesPage() {
           </span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          <Link href="/explore" style={{ fontSize: "0.75rem", fontWeight: 600, color: "rgba(250,247,242,0.6)", textDecoration: "none" }}>Explore →</Link>
           <Link href="/profile" style={{ fontSize: "0.75rem", fontWeight: 600, color: "rgba(250,247,242,0.6)", textDecoration: "none" }}>My Profile →</Link>
         </div>
       </div>

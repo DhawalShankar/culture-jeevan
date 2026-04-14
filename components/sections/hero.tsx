@@ -59,7 +59,7 @@ export default function Hero() {
     <div style={{ fontFamily: "'Inter', -apple-system, sans-serif", background: "#0D0C0A" }}>
 
       {/* Protection Banner */}
-      <div style={{
+      {/* <div style={{
         background: "#fff0b5",
         borderBottom: "1px solid rgba(45,36,30,0.08)",
         padding: "0.45rem 2rem",
@@ -82,7 +82,7 @@ export default function Hero() {
         <span style={{ fontSize: "0.7rem", color: "#7A3E1D", fontWeight: 700, letterSpacing: "0.03em" }}>
           always transact on CultureJeevan.
         </span>
-      </div>
+      </div> */}
 
       {/* Hero */}
       <section style={{ background: "#0D0C0A", position: "relative", overflow: "hidden" }}>
