@@ -10,24 +10,25 @@ const PHASES = [
     color: "#C4703A",
     bg: "#FDF0E6",
     border: "#F0DCC8",
+    status: "live",
     steps: [
       {
         number: "01",
         icon: "🔍",
-        title: "Find What You Need",
-        desc: "Browse verified Creators, Studios, and Cafés in your city. Filter by category, price, and rating. Every listing shows the Creator's real rate, their advance percentage, and links to their actual work — Instagram, YouTube, website.",
+        title: "Browse Listings",
+        desc: "Find verified Creators, Studios, and Cafés across Lucknow, Kanpur, and NCR. Every listing shows real rates, advance percentages, and direct links to their work — Instagram, YouTube, website. No fluff, no guesswork.",
       },
       {
         number: "02",
-        icon: "📅",
-        title: "Pick Your Slot",
-        desc: "Select your date and time from available slots — hourly, half-day, full-day, or multi-day. The rate and advance percentage are visible upfront. No DMs, no negotiations, no surprises.",
+        icon: "📋",
+        title: "Shortlist Your Pick",
+        desc: "Compare Creators and Spaces by category, price, and rating. Know exactly who you want before booking opens. The listing page tells you everything — rate, advance percentage, slot types, and cancellation policy.",
       },
       {
         number: "03",
         icon: "✉️",
         title: "Send a Request",
-        desc: "Send your booking request with full event details. The Creator reviews and accepts, rejects, or sends a custom quote. Spaces like Cafés and Studios confirm instantly — no waiting required.",
+        desc: "For Creators: submit a proposal with event date, time, venue, and your budget. The Creator reviews and calls you to finalise. For Spaces: select a date, pick a slot — hourly, half-day, or full day — and pay the advance. Slots confirm instantly.",
       },
     ],
   },
@@ -37,24 +38,25 @@ const PHASES = [
     color: "#2E8B7A",
     bg: "#E8F5F2",
     border: "#C0E0DA",
+    status: "soon",
     steps: [
       {
         number: "04",
         icon: "💳",
         title: "Pay the Advance",
-        desc: "Once accepted, pay 50–80% advance through the app. The money is held safely by CultureJeevan — not released until you confirm arrival on the day. Your slot is locked. Nobody can ghost you now.",
+        desc: "Once a Creator finalises your booking — or you pick a Space slot — pay 50–80% upfront via Razorpay. The money is held by CultureJeevan and not released until you confirm arrival. Your slot is locked. No one can ghost you now.",
       },
       {
         number: "05",
         icon: "📍",
         title: "Show Up",
-        desc: "Arrive at the confirmed time. Everything is pre-agreed — rate, slot, expectations. No last-minute calls, no follow-up needed. Just walk in.",
+        desc: "Arrive at the confirmed time. Everything is pre-agreed — rate, slot, scope. No last-minute calls, no renegotiation. Just walk in.",
       },
       {
         number: "06",
         icon: "🔢",
         title: "Share Your OTP",
-        desc: "On the day, your booking has a 6-digit OTP. Share it with the Creator or Space on arrival. They enter it into their dashboard — the advance releases to their account instantly.",
+        desc: "Each confirmed booking gets a unique 6-digit OTP. On the day, share it with the Creator or Space. They enter it on their dashboard — the advance releases to their account instantly. Simple, works on any device.",
       },
     ],
   },
@@ -64,25 +66,57 @@ const PHASES = [
     color: "#7C5CBF",
     bg: "#F0EBF8",
     border: "#D9CCF0",
+    status: "soon",
     steps: [
       {
         number: "07",
         icon: "🎬",
         title: "Work Happens",
-        desc: "The shoot, session, or performance is yours. CultureJeevan is not liable for on-site disputes — those are handled directly between you and the Creator or Space.",
+        desc: "The shoot, session, event, or performance is between you and the Creator or Space. CultureJeevan is a connector — like a telecom operator. What happens between the two parties is entirely theirs.",
       },
       {
         number: "08",
         icon: "🤝",
         title: "Pay the Balance",
-        desc: "After the work is done, pay the remaining amount directly — Cash or UPI. This goes straight to the Creator or Space. CultureJeevan does not touch it.",
+        desc: "After the work, pay the remaining 20–50% directly — cash or UPI. This goes straight to the Creator or Space. CultureJeevan takes only a 10% commission on the advance. The balance is never touched by the platform.",
       },
       {
         number: "09",
         icon: "⭐",
         title: "Review & Close",
-        desc: "Both sides leave a rating and written review. Public and permanent. This is how trust is built on the platform — no manager, no certificate needed.",
+        desc: "Both sides leave a public, permanent rating and written review. No manager, no certificate needed. This is how trust is built — one real booking at a time.",
       },
+    ],
+  },
+];
+
+const BOOKING_TYPES = [
+  {
+    icon: "🎤",
+    title: "Creator Booking",
+    subtitle: "Negotiation-based",
+    color: "#C4703A",
+    bg: "#FDF0E6",
+    border: "#F0DCC8",
+    flow: [
+      { label: "PROPOSED", desc: "You submit request with date, time, venue, budget" },
+      { label: "DIRECT CALL", desc: "Creator calls you to discuss and agree on scope" },
+      { label: "FINALIZED", desc: "Creator locks the price — you get notified to pay" },
+      { label: "PAID", desc: "Pay advance within 48 hrs or booking auto-expires" },
+    ],
+  },
+  {
+    icon: "🏛️",
+    title: "Space Booking",
+    subtitle: "Instant confirmation",
+    color: "#2E8B7A",
+    bg: "#E8F5F2",
+    border: "#C0E0DA",
+    flow: [
+      { label: "SELECT DATE", desc: "Pick a date from the Space's availability calendar" },
+      { label: "PICK SLOT", desc: "Choose hourly, half-day, full day, or multi-day" },
+      { label: "5-MIN HOLD", desc: "Slot is held while you complete payment" },
+      { label: "CONFIRMED", desc: "Pay advance — slot locks instantly for everyone else" },
     ],
   },
 ];
@@ -90,9 +124,9 @@ const PHASES = [
 const REVENUE_EXAMPLE = [
   { label: "Total Booking Value", value: "₹2,000", highlight: false },
   { label: "Advance Paid on App (50%)", value: "₹1,000", highlight: false },
-  { label: "CultureJeevan Commission (10%)", value: "₹100", highlight: false },
+  { label: "Platform Commission (10% of advance)", value: "₹100", highlight: false },
   { label: "Creator Payout via Bank Transfer", value: "₹900", highlight: false },
-  { label: "Balance Paid Directly (Cash/UPI)", value: "₹1,000", highlight: false },
+  { label: "Balance Paid Directly — Cash or UPI", value: "₹1,000", highlight: false },
   { label: "Creator Earns Total", value: "₹1,900", highlight: true },
 ];
 
@@ -100,48 +134,67 @@ const CONFLICT_SCENARIOS = [
   {
     icon: "🚫",
     scenario: "Creator No-Show",
-    action: "OTP is never entered. Advance is returned to the customer within T+2 business days. CultureJeevan retains its 10% commission.",
+    action: "OTP is never entered. Advance is returned to you within T+2 business days. Platform retains its 10% commission.",
   },
   {
     icon: "🏚️",
     scenario: "Space No-Show",
-    action: "100% refund to the customer. CultureJeevan waives its commission entirely to protect trust — no questions asked.",
+    action: "Full refund to you. Platform waives its commission entirely — no questions asked.",
+  },
+  {
+    icon: "📅",
+    scenario: "5+ Days Before Event",
+    action: "Either side cancels: full refund to you, no penalty on either side.",
+  },
+  {
+    icon: "⏰",
+    scenario: "Less Than 5 Days",
+    action: "You no-show: advance goes to Creator or Space. They cancel on you: full refund, they are penalised.",
   },
   {
     icon: "🔧",
     scenario: "Gear Damage at Space",
-    action: "Zero liability for CultureJeevan. Any damage is a direct legal matter between the customer and the Space.",
+    action: "Zero liability for CultureJeevan. Any damage is a direct matter between you and the Space.",
+  },
+  {
+    icon: "🔄",
+    scenario: "Rescheduling",
+    action: "No rescheduling on the platform. Cancellation only. Any rearrangement is between you and the Creator or Space directly.",
   },
 ];
 
 const FAQS = [
   {
     q: "What can I do on CultureJeevan right now?",
-    a: "Listings are live — browse Creators, Cafés, Studios, and Equipment across Lucknow, Kanpur, and NCR. Check rates, visit their Instagram and YouTube, and know exactly who you want before booking goes live.",
+    a: "Listings are live — browse Creators, Cafés, Studios, and Equipment across Lucknow, Kanpur, and NCR. Check rates, visit their Instagram and YouTube, and know exactly who you want. Booking opens very soon.",
   },
   {
-    q: "Is the advance always non-refundable?",
-    a: "Only if you (the customer) are a no-show. If the Creator or Space fails to show up, you get a 100% refund — no questions asked. Cancellations 5+ days before the event are also fully refunded.",
+    q: "How does Creator booking work vs Space booking?",
+    a: "Creator bookings are negotiation-based — you submit a proposal, the Creator calls you, you agree on details, they finalise the price, and you pay the advance. Space bookings are instant — pick a date, pick a slot, pay the advance. The slot locks in 5 minutes.",
   },
   {
-    q: "How does the advance percentage work?",
-    a: "Each Creator and Space sets their own advance percentage between 50% and 80%. This is clearly visible on their listing before you book. 100% upfront is never allowed on the platform.",
+    q: "What is the advance percentage?",
+    a: "Each Creator and Space sets their own advance between 50% and 80%. It is clearly visible on their listing before you book. 100% upfront is never allowed on the platform.",
   },
   {
-    q: "How does the OTP arrival confirmation work?",
-    a: "When your booking is confirmed, the platform generates a 6-digit OTP for that booking. On the day, you share this OTP with the Creator or Space. They enter it — the advance releases to their account. Simple, no scanning, works on any device.",
+    q: "How does the OTP work on the day?",
+    a: "When your booking is confirmed, the platform generates a 6-digit OTP for that booking. On the day, share it with the Creator or Space. They enter it on their dashboard — the advance releases to their account instantly.",
   },
   {
     q: "Can I pay the full amount on the app?",
-    a: "No — the advance (50–80%) is paid on the platform to secure your slot. The remaining balance is settled directly with the Creator or Space via Cash or UPI after the work is done.",
+    a: "No. The advance (50–80%) is paid through the platform to secure your slot. The remaining balance is settled directly with the Creator or Space via cash or UPI after the work is done. CultureJeevan never touches the balance.",
   },
   {
-    q: "What if a Creator or Space tries to make me bypass the platform?",
-    a: "Report it immediately. 30-day suspension on first offense, permanent ban on the second. Bookings outside CultureJeevan are not protected by any of our policies.",
+    q: "What if a Creator or Space asks me to bypass the platform?",
+    a: "That is their choice and yours — CultureJeevan is a connector. But understand: bookings made outside the platform are not covered by any of our policies. No OTP protection, no refunds, no dispute process.",
   },
   {
     q: "What is CultureJeevan's commission?",
-    a: "10% on every advance payment made through the app. This is the only money the platform touches. The balance payment between you and the Creator or Space is entirely off-platform.",
+    a: "10% on every advance payment. That is the only money the platform touches. The balance between you and the Creator or Space is entirely off-platform and unrecorded.",
+  },
+  {
+    q: "What about Equipment listings?",
+    a: "Equipment is a directory only — no platform payment, no advance, no OTP, no commission. Contact the Equipment Owner directly. CultureJeevan has zero liability for Equipment transactions.",
   },
 ];
 
@@ -180,7 +233,7 @@ export default function HowItWorks() {
             textTransform: "uppercase", padding: "0.35rem 1rem",
             borderRadius: "100px", marginBottom: "1.25rem",
           }}>
-            Listings Are Live — Booking Coming Soon
+            Listings Live — Booking Coming Soon
           </span>
           <h1 style={{
             fontFamily: "var(--font-playfair)",
@@ -191,10 +244,10 @@ export default function HowItWorks() {
             How CultureJeevan Works
           </h1>
           <p style={{ fontSize: "1rem", color: "#9B7B60", lineHeight: 1.8, marginBottom: "0.75rem" }}>
-            A transparent 3-phase system — from discovery to completion.
-            Find the right Creator or Space, secure your slot with an advance,
+            A transparent 3-phase system — discover, secure, close.
+            Find the right Creator or Space, lock your slot with an advance,
             confirm arrival with a 6-digit OTP, and settle the rest directly.
-            No grey areas. No surprises. No middlemen.
+            No grey areas. No surprises.
           </p>
           <p style={{ fontSize: "0.875rem", color: "#5C3D26", lineHeight: 1.7, marginBottom: "2rem", fontStyle: "italic" }}>
             Phasna Nahi, Udna Hai.
@@ -232,10 +285,8 @@ export default function HowItWorks() {
         </p>
       </div>
 
-      {/* ── Phase Timeline ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "5rem 2rem" }}>
-
-        {/* Phase overview pills */}
+      {/* ── Phase Overview Pills ── */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "5rem 2rem 0" }}>
         <div
           style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.5rem", marginBottom: "4rem" }}
           className="phase-label-grid"
@@ -257,7 +308,7 @@ export default function HowItWorks() {
 
         {/* Steps per phase */}
         {PHASES.map((phase, pi) => (
-          <div key={phase.phase} style={{ marginBottom: pi < PHASES.length - 1 ? "4rem" : 0 }}>
+          <div key={phase.phase} style={{ marginBottom: pi < PHASES.length - 1 ? "4rem" : "5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
               <div style={{
                 backgroundColor: phase.color, color: "#FAF7F2",
@@ -268,7 +319,7 @@ export default function HowItWorks() {
                 {phase.phase}: {phase.label}
               </div>
               <div style={{ flex: 1, height: "1px", backgroundColor: "#E8DED0" }} />
-              {pi === 0 ? (
+              {phase.status === "live" ? (
                 <span style={{
                   fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "#2E8B7A",
@@ -325,11 +376,72 @@ export default function HowItWorks() {
         ))}
       </div>
 
+      {/* ── Creator vs Space Booking Flow ── */}
+      <div style={{ backgroundColor: "#F5EFE7", padding: "5rem 2rem" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+            <span style={{
+              display: "inline-block", backgroundColor: "#FAF7F2", color: "#C4703A",
+              fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
+              textTransform: "uppercase", padding: "0.35rem 1rem",
+              borderRadius: "100px", marginBottom: "1rem", border: "1px solid #E8DED0",
+            }}>
+              Two Booking Types
+            </span>
+            <h2 style={{
+              fontFamily: "var(--font-playfair)",
+              fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+              fontWeight: 900, color: "#1C1410",
+              letterSpacing: "-0.02em", marginBottom: "0.75rem",
+            }}>
+              Creators vs Spaces — Different Flows
+            </h2>
+            <p style={{ fontSize: "0.9rem", color: "#6B5240", maxWidth: "480px", margin: "0 auto", lineHeight: 1.7 }}>
+              Creators are negotiation-based. Spaces are instant. Both use the same advance + OTP payment system.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }} className="booking-type-grid">
+            {BOOKING_TYPES.map((type) => (
+              <div key={type.title} style={{
+                backgroundColor: "#FFFFFF",
+                border: `1.5px solid ${type.border}`,
+                borderRadius: "20px", padding: "2rem",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
+                  <span style={{ fontSize: "1.5rem" }}>{type.icon}</span>
+                  <div>
+                    <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 800, color: "#1C1410" }}>{type.title}</p>
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: type.color, letterSpacing: "0.06em", textTransform: "uppercase" }}>{type.subtitle}</p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                  {type.flow.map((step, si) => (
+                    <div key={si} style={{ display: "flex", gap: "0.875rem", alignItems: "flex-start" }}>
+                      <div style={{
+                        backgroundColor: type.bg, border: `1px solid ${type.border}`,
+                        borderRadius: "6px", padding: "0.2rem 0.5rem",
+                        fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em",
+                        color: type.color, flexShrink: 0, marginTop: "2px",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {step.label}
+                      </div>
+                      <p style={{ fontSize: "0.845rem", color: "#6B5240", lineHeight: 1.6 }}>{step.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Occasions ── */}
-      <div style={{ backgroundColor: "#F5EFE7", padding: "4rem 2rem" }}>
+      <div style={{ padding: "4rem 2rem" }}>
         <div style={{ maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
           <span style={{
-            display: "inline-block", backgroundColor: "#FAF7F2", color: "#C4703A",
+            display: "inline-block", backgroundColor: "#F5EFE7", color: "#C4703A",
             fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.1em",
             textTransform: "uppercase", padding: "0.35rem 1rem",
             borderRadius: "100px", marginBottom: "1rem", border: "1px solid #E8DED0",
@@ -406,7 +518,7 @@ export default function HowItWorks() {
             ))}
           </div>
           <p style={{ fontSize: "0.78rem", color: "#5C4030", textAlign: "center", marginTop: "1rem", lineHeight: 1.6 }}>
-            * 10% commission on advance payment only. Balance paid directly — CultureJeevan does not touch it.
+            * 10% commission on advance only. Balance is paid directly — the platform never sees it.
           </p>
         </div>
       </div>
@@ -431,7 +543,7 @@ export default function HowItWorks() {
             Every Edge Case, Documented.
           </h2>
           <p style={{ fontSize: "0.9rem", color: "#6B5240", maxWidth: "480px", margin: "0 auto", lineHeight: 1.7 }}>
-            No grey areas. No disputes left to chance.
+            No grey areas. No disputes left to chance — but only for bookings made on the platform.
           </p>
         </div>
 
@@ -448,6 +560,19 @@ export default function HowItWorks() {
               <p style={{ fontSize: "0.825rem", color: "#6B5240", lineHeight: 1.7 }}>{s.action}</p>
             </div>
           ))}
+        </div>
+
+        {/* Connector disclaimer */}
+        <div style={{
+          marginTop: "2.5rem", backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8",
+          borderRadius: "14px", padding: "1.25rem 1.5rem",
+          display: "flex", gap: "1rem", alignItems: "flex-start",
+        }}>
+          <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>⚡</span>
+          <p style={{ fontSize: "0.845rem", color: "#6B5240", lineHeight: 1.75 }}>
+            <strong style={{ color: "#1C1410" }}>CultureJeevan is a connector platform.</strong>{" "}
+            Like a telecom operator that connects two callers — the platform is not responsible for what is agreed, said, or done between you and the Creator or Space. Price disputes, delivery disputes, and on-site matters are entirely between the two parties. Platform protection applies only to bookings and payments made through the app.
+          </p>
         </div>
       </div>
 
@@ -551,6 +676,7 @@ export default function HowItWorks() {
         @media (max-width: 768px) {
           .phase-label-grid { grid-template-columns: 1fr !important; }
           .steps-grid { grid-template-columns: 1fr !important; }
+          .booking-type-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

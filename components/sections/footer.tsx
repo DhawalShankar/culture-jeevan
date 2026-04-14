@@ -1,6 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import LegalModal from "@/components/sections/legal-modal"; // adjust path as needed
+
+type PolicyType = "privacy" | "terms" | null;
 
 const FOOTER_LINKS = {
   Platform: [
@@ -18,7 +22,7 @@ const FOOTER_LINKS = {
   Company: [
     { label: "About Us", href: "/about" },
     { label: "Careers", href: "/careers" },
-    { label: "Blog", href: "/blog" },
+    { label: "Blog", href: "https://www.cosmoindiaprakashan.in/blog", external: true },
   ],
 };
 
@@ -73,179 +77,212 @@ const SOCIAL = [
 ];
 
 export default function Footer() {
+  const [openModal, setOpenModal] = useState<PolicyType>(null);
+
   return (
-    <footer style={{
-      backgroundColor: "#0D0C0A",
-      borderTop: "1px solid rgba(196,112,58,0.1)",
-      color: "#FAF7F2",
-      padding: "4rem 3rem 2rem",
-      fontFamily: "'Inter', -apple-system, sans-serif",
-    }}>
-      <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+    <>
+      <LegalModal open={openModal} onClose={() => setOpenModal(null)} />
 
-        {/* Top grid */}
-        <div className="footer-grid" style={{
-          display: "grid",
-          gridTemplateColumns: "2fr repeat(3, 1fr)",
-          gap: "3rem",
-          marginBottom: "3.5rem",
-        }}>
+      <footer style={{
+        backgroundColor: "#0D0C0A",
+        borderTop: "1px solid rgba(196,112,58,0.1)",
+        color: "#FAF7F2",
+        padding: "4rem 3rem 2rem",
+        fontFamily: "'Inter', -apple-system, sans-serif",
+      }}>
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
 
-          {/* Brand col */}
-          <div>
-            <Link href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: "1rem" }}>
-              <span style={{
-                fontSize: "1.5rem",
-                fontWeight: 800,
-                color: "#FAF7F2",
-                letterSpacing: "-0.03em",
-                lineHeight: 1,
+          {/* Top grid */}
+          <div className="footer-grid" style={{
+            display: "grid",
+            gridTemplateColumns: "2fr repeat(3, 1fr)",
+            gap: "3rem",
+            marginBottom: "3.5rem",
+          }}>
+
+            {/* Brand col */}
+            <div>
+              <Link href="/" style={{ textDecoration: "none", display: "inline-block", marginBottom: "1rem" }}>
+                <span style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
+                  color: "#FAF7F2",
+                  letterSpacing: "-0.03em",
+                  lineHeight: 1,
+                }}>
+                  Culture<span style={{ color: "#C4703A" }}>Jeevan</span>
+                </span>
+              </Link>
+
+              <p style={{
+                fontSize: "0.82rem",
+                color: "rgba(250,247,242,0.3)",
+                lineHeight: 1.75,
+                maxWidth: "240px",
+                marginBottom: "1.5rem",
               }}>
-                Culture<span style={{ color: "#C4703A" }}>Jeevan</span>
-              </span>
-            </Link>
+                India&apos;s standard for creative bookings. Creators, spaces, and equipment — one platform.
+              </p>
 
-            <p style={{
-              fontSize: "0.82rem",
-              color: "rgba(250,247,242,0.3)",
-              lineHeight: 1.75,
-              maxWidth: "240px",
-              marginBottom: "1.5rem",
-            }}>
-              India's standard for creative bookings. Creators, spaces, and equipment — one platform.
+              {/* Social icons */}
+              <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                {SOCIAL.map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={s.label}
+                    style={{
+                      width: "34px", height: "34px",
+                      background: "rgba(250,247,242,0.04)",
+                      border: "1px solid rgba(250,247,242,0.08)",
+                      borderRadius: "8px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "rgba(250,247,242,0.35)",
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#C4703A";
+                      e.currentTarget.style.borderColor = "rgba(196,112,58,0.35)";
+                      e.currentTarget.style.background = "rgba(196,112,58,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "rgba(250,247,242,0.35)";
+                      e.currentTarget.style.borderColor = "rgba(250,247,242,0.08)";
+                      e.currentTarget.style.background = "rgba(250,247,242,0.04)";
+                    }}
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Link columns */}
+            {Object.entries(FOOTER_LINKS).map(([category, links]) => (
+              <div key={category}>
+                <p style={{
+                  fontSize: "0.62rem",
+                  fontWeight: 700,
+                  color: "#C4703A",
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  margin: "0 0 1rem",
+                }}>
+                  {category}
+                </p>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.55rem" }}>
+                  {links.map((link) => (
+                    <li key={link.label}>
+                      {"external" in link && link.external ? (
+                        <a
+                          href={link.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: "0.82rem", color: "rgba(250,247,242,0.3)", textDecoration: "none", transition: "color 0.2s" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "#FAF7F2")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.3)")}
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link
+                          href={link.href}
+                          style={{ fontSize: "0.82rem", color: "rgba(250,247,242,0.3)", textDecoration: "none", transition: "color 0.2s" }}
+                          onMouseEnter={(e) => (e.currentTarget.style.color = "#FAF7F2")}
+                          onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.3)")}
+                        >
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {/* Cities badge */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            marginBottom: "2rem",
+            padding: "0.75rem 1.25rem",
+            background: "rgba(196,112,58,0.06)",
+            border: "1px solid rgba(196,112,58,0.12)",
+            borderRadius: "10px",
+            width: "fit-content",
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#C4703A" opacity="0.7"/>
+            </svg>
+            <span style={{ fontSize: "0.65rem", color: "rgba(196,112,58,0.7)", fontWeight: 600, letterSpacing: "0.06em" }}>
+              Currently serving
+            </span>
+            <span style={{ fontSize: "0.65rem", color: "#C4703A", fontWeight: 700, letterSpacing: "0.06em" }}>
+              Lucknow · Kanpur · NCR
+            </span>
+            <span style={{ fontSize: "0.65rem", color: "rgba(196,112,58,0.4)", fontWeight: 500, letterSpacing: "0.04em" }}>
+              — expanding soon
+            </span>
+          </div>
+
+          {/* Bottom bar */}
+          <div style={{
+            borderTop: "1px solid rgba(250,247,242,0.05)",
+            paddingTop: "1.25rem",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1rem",
+          }}>
+            <p style={{ fontSize: "0.75rem", color: "rgba(250,247,242,0.18)", margin: 0 }}>
+              © {new Date().getFullYear()} CultureJeevan. All rights reserved. · culturejeevan.co.in
             </p>
 
-            {/* Social icons */}
-            <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-              {SOCIAL.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={s.label}
+            <div style={{ display: "flex", gap: "1.5rem" }}>
+              {(
+                [
+                  { label: "Privacy Policy", key: "privacy" },
+                  { label: "Terms of Service", key: "terms" },
+                ] as { label: string; key: PolicyType }[]
+              ).map(({ label, key }) => (
+                <button
+                  key={key}
+                  onClick={() => setOpenModal(key)}
                   style={{
-                    width: "34px", height: "34px",
-                    background: "rgba(250,247,242,0.04)",
-                    border: "1px solid rgba(250,247,242,0.08)",
-                    borderRadius: "8px",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "rgba(250,247,242,0.35)",
-                    textDecoration: "none",
-                    transition: "all 0.2s",
+                    fontSize: "0.75rem",
+                    color: "rgba(250,247,242,0.18)",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    transition: "color 0.2s",
+                    fontFamily: "inherit",
                   }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#C4703A";
-                    e.currentTarget.style.borderColor = "rgba(196,112,58,0.35)";
-                    e.currentTarget.style.background = "rgba(196,112,58,0.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "rgba(250,247,242,0.35)";
-                    e.currentTarget.style.borderColor = "rgba(250,247,242,0.08)";
-                    e.currentTarget.style.background = "rgba(250,247,242,0.04)";
-                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.45)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.18)")}
                 >
-                  {s.icon}
-                </a>
+                  {label}
+                </button>
               ))}
             </div>
           </div>
-
-          {/* Link columns */}
-          {Object.entries(FOOTER_LINKS).map(([category, links]) => (
-            <div key={category}>
-              <p style={{
-                fontSize: "0.62rem",
-                fontWeight: 700,
-                color: "#C4703A",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                marginBottom: "1rem",
-                margin: "0 0 1rem",
-              }}>
-                {category}
-              </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.55rem" }}>
-                {links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      style={{ fontSize: "0.82rem", color: "rgba(250,247,242,0.3)", textDecoration: "none", transition: "color 0.2s" }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = "#FAF7F2")}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.3)")}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
 
-        {/* CJ Badge — cities */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          marginBottom: "2rem",
-          padding: "0.75rem 1.25rem",
-          background: "rgba(196,112,58,0.06)",
-          border: "1px solid rgba(196,112,58,0.12)",
-          borderRadius: "10px",
-          width: "fit-content",
-        }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#C4703A" opacity="0.7"/>
-          </svg>
-          <span style={{ fontSize: "0.65rem", color: "rgba(196,112,58,0.7)", fontWeight: 600, letterSpacing: "0.06em" }}>
-            Currently serving
-          </span>
-          <span style={{ fontSize: "0.65rem", color: "#C4703A", fontWeight: 700, letterSpacing: "0.06em" }}>
-            Lucknow · Kanpur · NCR
-          </span>
-          <span style={{ fontSize: "0.65rem", color: "rgba(196,112,58,0.4)", fontWeight: 500, letterSpacing: "0.04em" }}>
-            — expanding soon
-          </span>
-        </div>
-
-        {/* Bottom bar */}
-        <div style={{
-          borderTop: "1px solid rgba(250,247,242,0.05)",
-          paddingTop: "1.25rem",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "1rem",
-        }}>
-          <p style={{ fontSize: "0.75rem", color: "rgba(250,247,242,0.18)", margin: 0 }}>
-            © {new Date().getFullYear()} CultureJeevan. All rights reserved. · culturejeevan.co.in
-          </p>
-          <div style={{ display: "flex", gap: "1.5rem" }}>
-            {["Privacy Policy", "Terms of Service"].map((item) => (
-              <a key={item} href="#" style={{
-                fontSize: "0.75rem", color: "rgba(250,247,242,0.18)",
-                textDecoration: "none", transition: "color 0.2s",
-              }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.45)")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(250,247,242,0.18)")}
-              >
-                {item}
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <style>{`
-        @media(max-width:900px){
-          .footer-grid{grid-template-columns:1fr 1fr !important;}
-        }
-        @media(max-width:560px){
-          .footer-grid{grid-template-columns:1fr !important;}
-        }
-      `}</style>
-    </footer>
+        <style>{`
+          @media(max-width:900px){
+            .footer-grid{grid-template-columns:1fr 1fr !important;}
+          }
+          @media(max-width:560px){
+            .footer-grid{grid-template-columns:1fr !important;}
+          }
+        `}</style>
+      </footer>
+    </>
   );
 }
