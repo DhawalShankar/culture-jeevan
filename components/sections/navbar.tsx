@@ -153,7 +153,7 @@ export default function Navbar() {
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            {user.firstName ?? "Dashboard"}
+            {user.firstName ?? "Profile"}
           </Link>
           <button
             onClick={() => signOut({ redirectUrl: "/" })}
@@ -198,7 +198,7 @@ export default function Navbar() {
       return (
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <Link
-            href="/dashboard"
+            href="/profile"
             onClick={() => setOpen(false)}
             style={{
               backgroundColor: "#C4703A", color: "#FAF7F2",
@@ -207,7 +207,7 @@ export default function Navbar() {
               textDecoration: "none", display: "inline-block",
             }}
           >
-            Dashboard
+            Profile
           </Link>
           <button
             onClick={() => { setOpen(false); signOut({ redirectUrl: "/" }); }}
