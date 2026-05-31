@@ -1,23 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useNotifications } from "@/hooks/useNotifications";
+import NotificationsOverlay from "@/components/sections/notifications-overlay";
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-// Replace these with real values from CartContext / NotificationContext later
-const MOCK_CART_COUNT = 2;    // number of confirmed items in cart
-const MOCK_NOTIF_COUNT = 3;   // number of unread notifications
+// ─── MOCK CART COUNT ──────────────────────────────────────────────────────────
+const MOCK_CART_COUNT = 2;
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const pathname = usePathname();
+  const [open, setOpen]           = useState(false); // hamburger
+  const [notifOpen, setNotifOpen] = useState(false); // notification overlay
+  const [isMobile, setIsMobile]   = useState(false);
+
+  const pathname        = usePathname();
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { signOut }     = useClerk();
+
+  // Bell button ka ref — overlay bahar-click detection ke liye
+  const bellRef = useRef<HTMLButtonElement>(null);
+
+  // Notifications hook — sirf tab active jab user logged in ho
+  const { items, unreadCount, loading, markAsRead, markAllAsRead } =
+    useNotifications(isLoaded && !!user);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -26,12 +35,16 @@ export default function Navbar() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  useEffect(() => { setOpen(false); }, [pathname]);
+  // Route change par sab band karo
+  useEffect(() => {
+    setOpen(false);
+    setNotifOpen(false);
+  }, [pathname]);
 
   const NAV_LINKS = [
-    { label: "Book a Creator", href: "/creators" },
-    { label: "Book a Space",   href: "/spaces"   },
-    { label: "Rent Equipment", href: "/equipment" },
+    { label: "Book a Creator", href: "/creators"     },
+    { label: "Book a Space",   href: "/spaces"       },
+    { label: "Rent Equipment", href: "/equipment"    },
     { label: "How It Works",   href: "/how-it-works" },
   ];
 
@@ -62,29 +75,16 @@ export default function Navbar() {
     </svg>
   );
 
-  // ── Reusable icon button with badge ────────────────────────────────────────
+  // ── Cart icon button (Link-based) ──────────────────────────────────────────
 
-  const IconButton = ({
-    href,
-    label,
-    count,
-    children,
-  }: {
-    href: string;
-    label: string;
-    count?: number;
-    children: React.ReactNode;
-  }) => (
+  const CartButton = ({ count }: { count?: number }) => (
     <Link
-      href={href}
-      aria-label={label}
+      href="/cart"
+      aria-label="My Cart"
       style={{
         position: "relative",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "36px",
-        height: "36px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: "36px", height: "36px",
         borderRadius: "8px",
         color: "#5C4A3A",
         textDecoration: "none",
@@ -100,33 +100,64 @@ export default function Navbar() {
         e.currentTarget.style.backgroundColor = "transparent";
       }}
     >
-      {children}
-
-      {/* Badge bubble */}
+      <CartIcon />
       {count != null && count > 0 && (
-        <span
-          style={{
-            position: "absolute",
-            top: "3px",
-            right: "3px",
-            minWidth: "15px",
-            height: "15px",
-            padding: "0 4px",
-            backgroundColor: "#C4703A",
-            color: "#FAF7F2",
-            fontSize: "9px",
-            fontWeight: 700,
-            lineHeight: "15px",
-            borderRadius: "10px",
-            textAlign: "center",
-            pointerEvents: "none",
-            border: "1.5px solid #FAF7F2",
-          }}
-        >
-          {count > 9 ? "9+" : count}
-        </span>
+        <Badge count={count} />
       )}
     </Link>
+  );
+
+  // ── Bell button (button, not Link — overlay toggle karta hai) ──────────────
+
+  const BellButton = () => (
+    <div style={{ position: "relative" }}>
+      <button
+        ref={bellRef}
+        onClick={() => setNotifOpen((v) => !v)}
+        aria-label="Notifications"
+        aria-expanded={notifOpen}
+        style={{
+          position: "relative",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: "36px", height: "36px",
+          borderRadius: "8px",
+          color: notifOpen ? "#C4703A" : "#5C4A3A",
+          backgroundColor: notifOpen ? "rgba(196,112,58,0.08)" : "transparent",
+          border: "none",
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "color 0.2s, background-color 0.2s",
+          fontFamily: "inherit",
+        }}
+        onMouseEnter={(e) => {
+          if (!notifOpen) {
+            e.currentTarget.style.color = "#C4703A";
+            e.currentTarget.style.backgroundColor = "rgba(196,112,58,0.08)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!notifOpen) {
+            e.currentTarget.style.color = "#5C4A3A";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }
+        }}
+      >
+        <BellIcon />
+        {unreadCount > 0 && <Badge count={unreadCount} />}
+      </button>
+
+      {/* Overlay — bell button ke neeche */}
+      <NotificationsOverlay
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        notifications={items}
+        unreadCount={unreadCount}
+        loading={loading}
+        markAsRead={markAsRead}
+        markAllAsRead={markAllAsRead}
+        anchorRef={bellRef}
+      />
+    </div>
   );
 
   // ── Desktop auth ───────────────────────────────────────────────────────────
@@ -274,7 +305,6 @@ export default function Navbar() {
         {!isMobile && (
           <div style={{ display: "flex", gap: "0.15rem", alignItems: "center" }}>
 
-            {/* Page links */}
             {NAV_LINKS.map((item) => {
               const active = isActive(item.href);
               return (
@@ -307,22 +337,16 @@ export default function Navbar() {
               );
             })}
 
-            {/* Divider
-            <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} /> */}
+            <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} />
 
-            {/* Bell — always visible on desktop */}
-            {/* <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
-              <BellIcon />
-            </IconButton> */}
+            {/* Bell + Cart — logged in users ke liye */}
+            {isLoaded && user && (
+              <>
+                <BellButton />
+                <CartButton count={MOCK_CART_COUNT} />
+              </>
+            )}
 
-            {/* Cart — visible only when logged in (only logged-in users can book) */}
-            {/* {isLoaded && user && (
-              <IconButton href="/cart" label="My Cart" count={MOCK_CART_COUNT}>
-                <CartIcon />
-              </IconButton>
-            )} */}
-
-            {/* Divider */}
             <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} />
 
             <AuthButton />
@@ -333,17 +357,12 @@ export default function Navbar() {
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: "0.15rem" }}>
 
-            {/* Bell */}
-            {/* <IconButton href="/notifications" label="Notifications" count={MOCK_NOTIF_COUNT}>
-              <BellIcon />
-            </IconButton> */}
-
-            {/* Cart (logged-in only) */}
-            {/* {isLoaded && user && (
-              <IconButton href="/cart" label="My Cart" count={MOCK_CART_COUNT}>
-                <CartIcon />
-              </IconButton>
-            )} */}
+            {isLoaded && user && (
+              <>
+                <BellButton />
+                <CartButton count={MOCK_CART_COUNT} />
+              </>
+            )}
 
             {/* Hamburger */}
             <button
@@ -410,5 +429,29 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+  );
+}
+
+// ── Small badge component ───────────────────────────────────────────────────
+function Badge({ count }: { count: number }) {
+  return (
+    <span
+      style={{
+        position: "absolute",
+        top: "3px", right: "3px",
+        minWidth: "15px", height: "15px",
+        padding: "0 4px",
+        backgroundColor: "#C4703A",
+        color: "#FAF7F2",
+        fontSize: "9px", fontWeight: 700,
+        lineHeight: "15px",
+        borderRadius: "10px",
+        textAlign: "center",
+        pointerEvents: "none",
+        border: "1.5px solid #FAF7F2",
+      }}
+    >
+      {count > 9 ? "9+" : count}
+    </span>
   );
 }

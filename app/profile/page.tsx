@@ -789,7 +789,7 @@ export default function ProfilePage() {
             <div data-error={!!errors.city || undefined}>
               <CitySelect value={data.city} onChange={set("city")} required error={errors.city} />
             </div>
-            <F label="Instagram" value={data.instagramHandle} onChange={set("instagramHandle")} placeholder="@yourhandle" />
+            <F label="Instagram" value={data.instagramHandle} onChange={set("instagramHandle")} placeholder="yourhandle" />
             <F label="Portfolio / Website" value={data.portfolioUrl} onChange={set("portfolioUrl")} placeholder="https://yoursite.com" />
           </Row>
           <div data-error={!!errors.bio || undefined}>

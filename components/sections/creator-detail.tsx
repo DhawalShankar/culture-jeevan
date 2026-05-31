@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase/client";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -11,14 +12,12 @@ interface Creator {
   profile_id: string;
   category: string;
   sub_category: string | null;
-  starting_price: number;
-  advance_percentage: number; // 50–80 as per blueprint
   experience: string | null;
   languages: string | null;
   bio: string | null;
   creator_description: string | null;
   skills: string[] | null;
-  occasion_types: string[] | null; // Wedding, Corporate, College Fest, etc.
+  occasion_types: string[] | null;
   instagram_handle: string | null;
   youtube_url: string | null;
   portfolio_url: string | null;
@@ -35,76 +34,29 @@ interface Profile {
   portfolio_url: string | null;
 }
 
-interface CreatorSlot {
-  id: string;
-  creator_id: string;
-  slot_date: string;       // ISO date string "YYYY-MM-DD"
-  slot_type: "hourly" | "half_day" | "full_day" | "multi_day";
-  start_time: string | null;
-  end_time: string | null;
-  half_day_period: "morning" | "afternoon" | "evening" | null;
-  end_date: string | null; // for multi-day
-  is_booked: boolean;
-}
-
-interface BadgeTier {
-  label: string;
-  color: string;
-  bg: string;
-  border: string;
-  icon: string;
-  minReviews: number;
-}
-
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const BADGE_TIERS: BadgeTier[] = [
-  { label: "Platinum", color: "#1A1A2E", bg: "#E8E8F5", border: "#9090C8", icon: "💎", minReviews: 1000 },
-  { label: "Gold",     color: "#7A5200", bg: "#FFF3CC", border: "#D4A017", icon: "🥇", minReviews: 500  },
-  { label: "Silver",   color: "#4A4A4A", bg: "#F0F0F0", border: "#A0A0A0", icon: "🥈", minReviews: 200  },
-  { label: "CJ Verified", color: "#1C6B5A", bg: "#E8F5F2", border: "#4CAF90", icon: "✓", minReviews: 50 },
-];
-
 const CREATOR_CATEGORY_ICON: Record<string, string> = {
-  "Photographer":        "📸",
-  "Videographer":        "🎬",
-  "Cinematographer":     "🎥",
-  "Drone Pilot":         "🚁",
-  "Video Editor":        "🎨",
-  "Motion Designer":     "✨",
-  "Colorist":            "🎞️",
-  "Sound Engineer":      "🎙️",
-  "Lighting Professional": "💡",
-  "Singer":              "🎤",
-  "Musician":            "🎵",
-  "Tabla Player":        "🥁",
-  "Dancer":              "💃",
-  "Stand-Up Comedian":   "🎭",
-  "Poet":                "✍️",
-  "Mehendi Artist":      "🌿",
-  "Makeup Artist":       "💄",
-  "default":             "🎯",
+  Photographer: "📸", Videographer: "🎬", Cinematographer: "🎥",
+  "Drone Pilot": "🚁", "Video Editor": "🎨", "Motion Designer": "✨",
+  Colorist: "🎞️", "Sound Engineer": "🎙️", "Lighting Professional": "💡",
+  Singer: "🎤", Musician: "🎵", "Tabla Player": "🥁",
+  Dancer: "💃", "Stand-Up Comedian": "🎭", Poet: "✍️",
+  "Mehendi Artist": "🌿", "Makeup Artist": "💄", default: "🎯",
 };
 
 const OCCASION_ICONS: Record<string, string> = {
-  "Wedding":       "💍",
-  "Corporate":     "🏢",
-  "College Fest":  "🎓",
-  "Birthday":      "🎂",
-  "Concert":       "🎸",
-  "Brand Campaign":"📣",
-  "Short Film":    "🎬",
-  "Product Shoot": "📦",
-  "Reel / Content":"📱",
-  "Open Mic":      "🎤",
-  "default":       "🎪",
+  Wedding: "💍", Corporate: "🏢", "College Fest": "🎓",
+  Birthday: "🎂", Concert: "🎸", "Brand Campaign": "📣",
+  "Short Film": "🎬", "Product Shoot": "📦", "Reel / Content": "📱",
+  "Open Mic": "🎤", Other: "✏️",
 };
 
-const HALF_DAY_PERIODS = [
-  { key: "morning",   label: "Morning",   time: "10:00 AM – 2:00 PM"  },
-  { key: "afternoon", label: "Afternoon", time: "4:00 PM – 8:00 PM"   },
-  { key: "evening",   label: "Evening",   time: "6:00 PM – 10:00 PM"  },
-] as const;
+const ALL_OCCASIONS = [
+  "Wedding", "Birthday", "College Fest", "Corporate",
+  "Concert", "Open Mic", "Brand Campaign", "Short Film",
+  "Product Shoot", "Reel / Content", "Other",
+];
 
 const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=900&q=85",
@@ -113,45 +65,48 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=900&q=85",
 ];
 
-function getBadge(reviewCount: number, avgRating: number): BadgeTier | null {
-  if (avgRating < 4) return null;
-  return BADGE_TIERS.find((b) => reviewCount >= b.minReviews) ?? null;
-}
-
 function getImages(creator: Creator): string[] {
-  if (creator.images && creator.images.length > 0) return creator.images;
-  return FALLBACK_IMAGES;
+  return creator.images && creator.images.length > 0 ? creator.images : FALLBACK_IMAGES;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Skeleton() {
   return (
-    <div style={{ backgroundColor: "#FAF7F2", minHeight: "100vh" }}>
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "3rem" }}>
-          <div>
-            <div style={{ height: "420px", borderRadius: "20px", background: "linear-gradient(90deg,#F0E8DC 25%,#E8DED0 50%,#F0E8DC 75%)", backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite", marginBottom: "1.5rem" }} />
-            {[240, 180, 120].map((w, i) => (
-              <div key={i} style={{ height: "18px", width: `${w}px`, borderRadius: "6px", background: "#E8DED0", marginBottom: "0.75rem" }} />
-            ))}
-          </div>
-          <div style={{ height: "520px", borderRadius: "20px", background: "#E8DED0" }} />
-        </div>
+    <div className="cd-bg cd-min-h">
+      <div className="cd-container cd-py-xl">
+        <div className="cd-skeleton-hero" />
+        <div className="cd-skeleton-body" />
       </div>
-      <style>{`@keyframes shimmer { to { background-position: -200% 0; } }`}</style>
+      <style>{`
+        .cd-bg { background: #FAF8F5; }
+        .cd-min-h { min-height: 100vh; }
+        .cd-container { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; }
+        .cd-py-xl { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+        .cd-skeleton-hero {
+          height: 340px; border-radius: 20px;
+          background: linear-gradient(90deg,#EDE8E0 25%,#E4DED6 50%,#EDE8E0 75%);
+          background-size: 200% 100%; animation: shimmer 1.4s infinite; margin-bottom: 1.5rem;
+        }
+        .cd-skeleton-body {
+          height: 220px; border-radius: 16px;
+          background: linear-gradient(90deg,#EDE8E0 25%,#E4DED6 50%,#EDE8E0 75%);
+          background-size: 200% 100%; animation: shimmer 1.4s infinite 0.2s;
+        }
+        @keyframes shimmer { to { background-position: -200% 0; } }
+      `}</style>
     </div>
   );
 }
 
 function NotFound() {
   return (
-    <div style={{ backgroundColor: "#FAF7F2", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ background: "#FAF8F5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ textAlign: "center", padding: "2rem" }}>
-        <span style={{ fontSize: "3rem", display: "block", marginBottom: "1rem" }}>🎭</span>
-        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.5rem", color: "#1C1410", marginBottom: "0.5rem" }}>Creator Not Found</h2>
-        <p style={{ color: "#9B7B60", marginBottom: "1.5rem" }}>This profile may have been removed or the link is incorrect.</p>
-        <Link href="/creators" style={{ backgroundColor: "#C4703A", color: "#FAF7F2", padding: "0.75rem 1.5rem", borderRadius: "8px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem" }}>
+        <span style={{ fontSize: "2.5rem", display: "block", marginBottom: "1rem" }}>🎭</span>
+        <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.5rem", fontWeight: 900, color: "#1C1410", marginBottom: "0.5rem" }}>Creator Not Found</h2>
+        <p style={{ color: "#7A6655", marginBottom: "1.5rem", fontSize: "0.875rem" }}>This profile may have been removed.</p>
+        <Link href="/creators" style={{ background: "#C4703A", color: "#FAF8F5", padding: "0.7rem 1.5rem", borderRadius: "10px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem" }}>
           Browse All Creators →
         </Link>
       </div>
@@ -159,668 +114,583 @@ function NotFound() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Divider() {
+  return <div style={{ height: "1px", background: "#EDE8E0", margin: "2rem 0" }} />;
+}
+
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  const steps = ["Event Details", "Your Info", "Confirm"];
   return (
-    <div style={{ marginBottom: "2.5rem" }}>
-      <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", fontWeight: 800, color: "#1C1410", marginBottom: "1rem", paddingBottom: "0.625rem", borderBottom: "1.5px solid #E8DED0" }}>
-        {title}
-      </h2>
-      {children}
+    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", marginBottom: "1.5rem" }}>
+      {steps.map((label, i) => {
+        const n = i + 1;
+        const done = step > n;
+        const active = step === n;
+        return (
+          <div key={n} style={{ display: "flex", alignItems: "center", gap: "0.25rem", flex: i < 2 ? 1 : 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem", flexShrink: 0 }}>
+              <div style={{
+                width: "26px", height: "26px", borderRadius: "50%",
+                background: done ? "#C4703A" : active ? "#C4703A" : "#EDE8E0",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "background 0.25s",
+              }}>
+                <span style={{ fontSize: "0.62rem", fontWeight: 800, color: done || active ? "#FAF8F5" : "#A08070" }}>
+                  {done ? "✓" : n}
+                </span>
+              </div>
+              <span style={{ fontSize: "0.55rem", fontWeight: 700, color: active ? "#C4703A" : "#A08070", letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                {label}
+              </span>
+            </div>
+            {i < 2 && (
+              <div style={{ flex: 1, height: "1.5px", background: step > n ? "#C4703A" : "#EDE8E0", transition: "background 0.3s", marginBottom: "14px" }} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
+// ─── Input styles ─────────────────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width: "100%", padding: "0.65rem 0.85rem",
+  border: "1.5px solid #E2DAD0", borderRadius: "10px",
+  fontSize: "0.875rem", color: "#1C1410", background: "#FAF8F5",
+  outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+  transition: "border-color 0.2s",
+};
+
+const labelStyle: React.CSSProperties = {
+  display: "block", fontSize: "0.65rem", fontWeight: 700, color: "#9B8070",
+  letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.4rem",
+};
+
+const focusIn  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.currentTarget.style.borderColor = "#C4703A");
+const focusOut = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => (e.currentTarget.style.borderColor = "#E2DAD0");
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function CreatorDetail({ id }: { id: string }) {
-  const [creator, setCreator] = useState<Creator | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [slots, setSlots] = useState<CreatorSlot[]>([]);
+  const { user } = useUser();
+
+  const [creator,     setCreator]     = useState<Creator | null>(null);
+  const [profile,     setProfile]     = useState<Profile | null>(null);
   const [reviewCount, setReviewCount] = useState(0);
-  const [avgRating, setAvgRating] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [avgRating,   setAvgRating]   = useState(0);
+  const [loading,     setLoading]     = useState(true);
+  const [notFound,    setNotFound]    = useState(false);
 
-  // Gallery
-  const [activeImage, setActiveImage] = useState(0);
-
-  // Slot selection state
-  const [selectedDate, setSelectedDate] = useState("");
-  const [slotType, setSlotType] = useState<"hourly" | "half_day" | "full_day" | "multi_day">("hourly");
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState("");
-
-  // Request form state
-  const [requestStep, setRequestStep] = useState<"slot" | "details" | "custom">("slot");
-  const [requestType, setRequestType] = useState<"standard" | "custom">("standard");
-  const [occasionType, setOccasionType] = useState("");
-  const [locationText, setLocationText] = useState("");
-  const [eventNote, setEventNote] = useState("");
-  const [requesterName, setRequesterName] = useState("");
+  const [activeImage,    setActiveImage]    = useState(0);
+  const [step,           setStep]           = useState<1 | 2 | 3>(1);
+  const [eventDate,      setEventDate]      = useState("");
+  const [occasionType,   setOccasionType]   = useState("");
+  const [locationText,   setLocationText]   = useState("");
+  const [budget,         setBudget]         = useState("");
+  const [eventNote,      setEventNote]      = useState("");
+  const [requesterName,  setRequesterName]  = useState("");
   const [requesterPhone, setRequesterPhone] = useState("");
-  const [customBudget, setCustomBudget] = useState("");
-  const [customScope, setCustomScope] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [requesterCity,  setRequesterCity]  = useState("");
+  const [submitting,     setSubmitting]     = useState(false);
+  const [submitted,      setSubmitted]      = useState(false);
 
-  // ── Fetch ──
   useEffect(() => {
     async function fetchAll() {
       setLoading(true);
       const supabase = createClient();
-
-      const { data: creatorData, error } = await supabase
-        .from("creators")
-        .select("*")
-        .eq("id", id)
-        .single();
-
+      const { data: creatorData, error } = await supabase.from("creators").select("*").eq("id", id).single();
       if (error || !creatorData) { setNotFound(true); setLoading(false); return; }
       setCreator(creatorData);
 
       const { data: profileData } = await supabase
         .from("profiles")
         .select("id, full_name, phone, city, bio, instagram_handle, portfolio_url")
-        .eq("id", creatorData.profile_id)
-        .single();
+        .eq("id", creatorData.profile_id).single();
       setProfile(profileData ?? null);
 
-      const { data: slotData } = await supabase
-        .from("creator_slots")
-        .select("*")
-        .eq("creator_id", id)
-        .eq("is_booked", false)
-        .gte("slot_date", new Date().toISOString().split("T")[0])
-        .order("slot_date", { ascending: true });
-      setSlots(slotData ?? []);
-
       const { count, data: reviewData } = await supabase
-        .from("reviews")
-        .select("rating", { count: "exact" })
-        .eq("creator_id", id);
+        .from("reviews").select("rating", { count: "exact" }).eq("creator_id", id);
       const total = count ?? 0;
       setReviewCount(total);
       if (total > 0 && reviewData) {
-        const avg = reviewData.reduce((s, r) => s + (r.rating ?? 0), 0) / total;
-        setAvgRating(Math.round(avg * 10) / 10);
+        setAvgRating(Math.round(reviewData.reduce((s, r) => s + (r.rating ?? 0), 0) / total * 10) / 10);
       }
-
       setLoading(false);
     }
     fetchAll();
   }, [id]);
 
-  if (loading) return <Skeleton />;
+  useEffect(() => {
+    if (!user) return;
+    async function fetchClient() {
+      const supabase = createClient();
+      const { data } = await supabase.from("profiles").select("full_name, phone, city").eq("clerk_id", user!.id).single();
+      setRequesterName(data?.full_name  ?? user!.fullName ?? "");
+      setRequesterPhone(data?.phone     ?? "");
+      setRequesterCity(data?.city       ?? "");
+    }
+    fetchClient();
+  }, [user]);
+
+  if (loading)              return <Skeleton />;
   if (notFound || !creator) return <NotFound />;
 
-  const images = getImages(creator);
-  const badge = getBadge(reviewCount, avgRating);
-  const icon = CREATOR_CATEGORY_ICON[creator.category] ?? CREATOR_CATEGORY_ICON["default"];
+  const images     = getImages(creator);
+  const icon       = CREATOR_CATEGORY_ICON[creator.category] ?? CREATOR_CATEGORY_ICON["default"];
+  const skills     = creator.skills ?? [];
+  const rawOcc     = creator.occasion_types?.length ? creator.occasion_types : ALL_OCCASIONS;
+  const occasions  = rawOcc.includes("Other") ? rawOcc : [...rawOcc, "Other"];
+  const today      = new Date().toISOString().split("T")[0];
 
-  // Slots for chosen date + type
-  const slotsForDate = slots.filter(
-    (s) => s.slot_date === selectedDate && s.slot_type === slotType
-  );
-  const selectedSlot = slots.find((s) => s.id === selectedSlotId) ?? null;
+  const step1Valid = eventDate && occasionType && locationText.trim().length > 1 &&
+    (occasionType !== "Other" || eventNote.trim().length > 1);
+  const step2Valid = requesterName.trim().length > 1 && requesterPhone.trim().length >= 10;
 
-  // Compute price
-  const advancePct = creator.advance_percentage ?? 50;
-  const basePrice = creator.starting_price;
-  const advanceAmount = Math.round(basePrice * (advancePct / 100));
-  const balanceAmount = basePrice - advanceAmount;
-
-  // Unique available dates for chosen slot type
-  const availableDates = [
-    ...new Set(
-      slots.filter((s) => s.slot_type === slotType).map((s) => s.slot_date)
-    ),
-  ].sort();
-
-  const canProceedToDetails =
-    selectedDate &&
-    selectedSlotId &&
-    (slotType !== "multi_day" || endDate);
-
-  const canSubmit =
-    requesterName.trim() &&
-    requesterPhone.trim().length >= 10 &&
-    occasionType &&
-    locationText.trim();
-
-  // ── Handlers ──
-  async function handleSubmitRequest() {
-    if (!canSubmit || !creator) return;
+  async function handleSubmit() {
+    if (!creator) return;
     setSubmitting(true);
     const supabase = createClient();
-    const payload = {
-      creator_id: creator.id,
-      slot_id: selectedSlotId,
-      requester_name: requesterName.trim(),
+    await supabase.from("booking_requests").insert({
+      creator_id:      creator.id,
+      requester_name:  requesterName.trim(),
       requester_phone: requesterPhone.trim(),
-      occasion_type: occasionType,
-      location: locationText.trim(),
-      note: eventNote.trim() || null,
-      request_type: requestType,
-      custom_budget: requestType === "custom" ? customBudget : null,
-      custom_scope: requestType === "custom" ? customScope.trim() : null,
-      status: "pending",
-    };
-    await supabase.from("booking_requests").insert(payload);
+      requester_city:  requesterCity.trim() || null,
+      occasion_type:   occasionType,
+      event_date:      eventDate,
+      location:        locationText.trim(),
+      budget:          budget.trim() || null,
+      note:            eventNote.trim() || null,
+      request_type:    "standard",
+      status:          "pending",
+    });
     setSubmitting(false);
     setSubmitted(true);
   }
 
-  const skills = creator.skills ?? [];
-  const occasions = creator.occasion_types ?? [];
+  function resetForm() {
+    setSubmitted(false); setStep(1);
+    setEventDate(""); setOccasionType(""); setLocationText(""); setBudget(""); setEventNote("");
+  }
+
+  const C = {
+    bg:      "#FAF8F5",
+    dark:    "#1C1410",
+    primary: "#C4703A",
+    pdark:   "#A85C2E",
+    muted:   "#7A6655",
+    subtle:  "#9B8070",
+    border:  "#E2DAD0",
+    surface: "#F3EDE6",
+    cream:   "#FDF2E9",
+  };
 
   return (
-    <div style={{ backgroundColor: "#FAF7F2", minHeight: "100vh" }}>
-      {/* Breadcrumb */}
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "1.5rem 2rem 0", display: "flex", gap: "0.5rem", fontSize: "0.82rem", color: "#9B7B60", alignItems: "center", flexWrap: "wrap" }}>
-        <Link href="/" style={{ color: "#9B7B60", textDecoration: "none" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#C4703A")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9B7B60")}>Home</Link>
-        <span>›</span>
-        <Link href="/creators" style={{ color: "#9B7B60", textDecoration: "none" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "#C4703A")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "#9B7B60")}>Book a Creator</Link>
-        <span>›</span>
-        <span style={{ color: "#1C1410", fontWeight: 500 }}>{profile?.full_name ?? creator.category}</span>
+    <div style={{ background: C.bg, minHeight: "100vh", fontFamily: "var(--font-dm-sans), sans-serif" }}>
+
+      {/* ── Breadcrumb ── */}
+      <div style={{ maxWidth: "860px", margin: "0 auto", padding: "1.25rem 1.5rem 0", display: "flex", gap: "0.4rem", fontSize: "0.78rem", color: C.subtle, alignItems: "center" }}>
+        <Link href="/" style={{ color: C.subtle, textDecoration: "none" }}>Home</Link>
+        <span style={{ opacity: 0.4 }}>›</span>
+        <Link href="/creators" style={{ color: C.subtle, textDecoration: "none" }}>Creators</Link>
+        <span style={{ opacity: 0.4 }}>›</span>
+        <span style={{ color: C.dark, fontWeight: 600 }}>{profile?.full_name ?? creator.category}</span>
       </div>
 
-      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "1.5rem 2rem 5rem" }}>
-        <div className="detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "3rem", alignItems: "start" }}>
+      <div style={{ maxWidth: "860px", margin: "0 auto", padding: "1.75rem 1.5rem 5rem" }}>
 
-          {/* ── LEFT COLUMN ── */}
-          <div>
-            {/* Image Gallery */}
-            <div style={{ marginBottom: "2rem" }}>
-              <div style={{ borderRadius: "20px", overflow: "hidden", height: "420px", backgroundColor: "#D4B896", marginBottom: "0.75rem", position: "relative" }}>
-                <img src={images[activeImage]} alt={profile?.full_name ?? creator.category}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                {/* Badge overlay */}
-                {badge && (
-                  <div style={{ position: "absolute", top: "1rem", left: "1rem", display: "flex", alignItems: "center", gap: "0.35rem", backgroundColor: badge.bg, border: `1.5px solid ${badge.border}`, borderRadius: "100px", padding: "0.3rem 0.75rem", backdropFilter: "blur(4px)" }}>
-                    <span style={{ fontSize: "0.9rem" }}>{badge.icon}</span>
-                    <span style={{ fontSize: "0.72rem", fontWeight: 800, color: badge.color, letterSpacing: "0.04em" }}>
-                      {badge.label === "CJ Verified" ? "CJ Verified" : `CJ ${badge.label}`}
-                    </span>
-                  </div>
-                )}
-                {/* Premium tag */}
-                <div style={{ position: "absolute", top: "1rem", right: "1rem", backgroundColor: "rgba(28,20,16,0.75)", backdropFilter: "blur(4px)", borderRadius: "100px", padding: "0.28rem 0.65rem" }}>
-                  <span style={{ fontSize: "0.67rem", fontWeight: 700, color: "#FAD97A", letterSpacing: "0.08em", textTransform: "uppercase" }}>⭐ Premium</span>
-                </div>
+        {/* ══════════ HERO — Name + Category ══════════ */}
+        <div style={{ marginBottom: "2rem" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+            <div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", background: C.cream, border: `1px solid #F0DCC8`, borderRadius: "100px", padding: "0.2rem 0.7rem", fontSize: "0.72rem", fontWeight: 700, color: C.primary, marginBottom: "0.6rem" }}>
+                <span>{icon}</span>
+                <span>{creator.category}{creator.sub_category ? ` · ${creator.sub_category}` : ""}</span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
-                {images.slice(0, 4).map((img, i) => (
-                  <div key={i} onClick={() => setActiveImage(i)}
-                    style={{ borderRadius: "10px", overflow: "hidden", height: "80px", cursor: "pointer", border: `2px solid ${activeImage === i ? "#C4703A" : "transparent"}`, transition: "border-color 0.2s", opacity: activeImage === i ? 1 : 0.7 }}>
-                    <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Title + Meta */}
-            <div style={{ marginBottom: "2rem" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-                <div>
-                  <span style={{ backgroundColor: "#F0DCC8", color: "#8B4513", fontSize: "0.75rem", fontWeight: 700, padding: "0.3rem 0.75rem", borderRadius: "100px", letterSpacing: "0.05em", textTransform: "uppercase", display: "inline-block", marginBottom: "0.5rem" }}>
-                    {icon} {creator.category}{creator.sub_category ? ` · ${creator.sub_category}` : ""}
+              <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: "clamp(1.9rem, 4vw, 2.6rem)", fontWeight: 900, color: C.dark, margin: "0 0 0.5rem", lineHeight: 1.15 }}>
+                {profile?.full_name ?? "Creator"}
+              </h1>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+                {profile?.city && (
+                  <span style={{ fontSize: "0.8rem", color: C.muted, display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                    📍 {profile.city}
                   </span>
-                  <h1 style={{ fontFamily: "var(--font-playfair)", fontSize: "2rem", fontWeight: 900, color: "#1C1410", letterSpacing: "-0.02em", lineHeight: 1.15 }}>
-                    {profile?.full_name ?? "Creator"}
-                  </h1>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.8rem", fontWeight: 800, color: "#C4703A" }}>
-                    ₹{creator.starting_price.toLocaleString()}
-                  </p>
-                  <p style={{ fontSize: "0.8rem", color: "#9B7B60" }}>starting price</p>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "1.5rem", marginTop: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
-                {profile?.city && <span style={{ fontSize: "0.875rem", color: "#7A5C42" }}>📍 {profile.city}</span>}
-                {creator.experience && <span style={{ fontSize: "0.875rem", color: "#7A5C42" }}>🎯 {creator.experience} experience</span>}
-                {creator.languages && <span style={{ fontSize: "0.875rem", color: "#7A5C42" }}>🗣️ {creator.languages}</span>}
+                )}
+                {creator.experience && (
+                  <span style={{ fontSize: "0.8rem", color: C.muted }}>· {creator.experience} experience</span>
+                )}
+                {creator.languages && (
+                  <span style={{ fontSize: "0.8rem", color: C.muted }}>· {creator.languages}</span>
+                )}
                 {reviewCount > 0 && (
-                  <span style={{ fontSize: "0.875rem", color: "#7A5C42", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                    <span style={{ color: "#F5A623" }}>{"★".repeat(Math.round(avgRating))}</span>
-                    {avgRating} ({reviewCount} reviews)
+                  <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#B5860A", background: "#FFFBEF", border: "1px solid #F5E0A0", borderRadius: "100px", padding: "0.15rem 0.6rem" }}>
+                    ★ {avgRating} <span style={{ fontWeight: 400, color: C.muted }}>({reviewCount} reviews)</span>
                   </span>
                 )}
-              </div>
-
-              {/* Social Links */}
-              <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.875rem", flexWrap: "wrap" }}>
-                {(creator.instagram_handle ?? profile?.instagram_handle) && (
-                  <a href={`https://instagram.com/${(creator.instagram_handle ?? profile?.instagram_handle ?? "").replace("@", "")}`}
-                    target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", fontWeight: 600, color: "#C4703A", backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", padding: "0.3rem 0.75rem", borderRadius: "100px", textDecoration: "none" }}>
-                    📷 Instagram
-                  </a>
-                )}
-                {creator.youtube_url && (
-                  <a href={creator.youtube_url} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", fontWeight: 600, color: "#C4703A", backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", padding: "0.3rem 0.75rem", borderRadius: "100px", textDecoration: "none" }}>
-                    ▶️ YouTube
-                  </a>
-                )}
-                {(creator.portfolio_url ?? profile?.portfolio_url) && (
-                  <a href={creator.portfolio_url ?? profile?.portfolio_url ?? "#"} target="_blank" rel="noopener noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.78rem", fontWeight: 600, color: "#7A5C42", backgroundColor: "#F5EFE7", border: "1px solid #E8DED0", padding: "0.3rem 0.75rem", borderRadius: "100px", textDecoration: "none" }}>
-                    🔗 Portfolio
-                  </a>
+                {reviewCount >= 50 && (
+                  <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#3C3489", background: "#EEEDFE", border: "1px solid #AFA9EC", borderRadius: "100px", padding: "0.15rem 0.6rem" }}>
+                    ✓ CJ Verified
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* How Booking Works */}
-            <Section title="How Booking Works">
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.875rem" }} className="how-grid">
-                {[
-                  { step: "01", icon: "📋", title: "Send a Request", desc: "Share your event details — occasion, date, location, and what you need. The creator reviews before accepting." },
-                  { step: "02", icon: "✅", title: "Creator Accepts", desc: "If they're comfortable with the brief, they accept. For custom scope, they reply with a quote. You get 24 hours to confirm." },
-                  { step: "03", icon: "💳", title: "Pay the Advance", desc: `Pay ${advancePct}% advance on the platform to confirm. Balance paid directly to creator after the work is done.` },
-                ].map((s) => (
-                  <div key={s.step} style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "14px", padding: "1.125rem", position: "relative", overflow: "hidden" }}>
-                    <span style={{ position: "absolute", top: "0.5rem", right: "0.75rem", fontSize: "2.5rem", fontFamily: "var(--font-playfair)", fontWeight: 900, color: "#F5EFE7", lineHeight: 1, userSelect: "none" }}>{s.step}</span>
-                    <span style={{ fontSize: "1.4rem", display: "block", marginBottom: "0.5rem" }}>{s.icon}</span>
-                    <p style={{ fontFamily: "var(--font-playfair)", fontSize: "0.875rem", fontWeight: 800, color: "#1C1410", marginBottom: "0.375rem" }}>{s.title}</p>
-                    <p style={{ fontSize: "0.78rem", color: "#6B5240", lineHeight: 1.65 }}>{s.desc}</p>
-                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "2.5px", backgroundColor: "#C4703A", opacity: 0.35 }} />
+            {/* Social links */}
+            <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", alignSelf: "flex-start" }}>
+              {(creator.instagram_handle ?? profile?.instagram_handle) && (
+                <a href={`https://instagram.com/${(creator.instagram_handle ?? profile?.instagram_handle ?? "").replace("@", "")}`}
+                  target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "0.75rem", fontWeight: 700, color: C.primary, background: C.cream, border: `1px solid #F0DCC8`, padding: "0.3rem 0.8rem", borderRadius: "100px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                  📷 Instagram
+                </a>
+              )}
+              {creator.youtube_url && (
+                <a href={creator.youtube_url} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "0.75rem", fontWeight: 700, color: C.primary, background: C.cream, border: `1px solid #F0DCC8`, padding: "0.3rem 0.8rem", borderRadius: "100px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                  ▶️ YouTube
+                </a>
+              )}
+              {(creator.portfolio_url ?? profile?.portfolio_url) && (
+                <a href={creator.portfolio_url ?? profile?.portfolio_url ?? "#"} target="_blank" rel="noopener noreferrer"
+                  style={{ fontSize: "0.75rem", fontWeight: 600, color: C.muted, background: C.surface, border: `1px solid ${C.border}`, padding: "0.3rem 0.8rem", borderRadius: "100px", textDecoration: "none", whiteSpace: "nowrap" }}>
+                  🔗 Portfolio
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════ GALLERY — Slim strip ══════════ */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          {/* Main image */}
+          <div style={{ borderRadius: "16px", overflow: "hidden", height: "380px", position: "relative", background: "#D4B896", marginBottom: "0.5rem" }}>
+            <img src={images[activeImage]} alt={profile?.full_name ?? creator.category}
+              style={{ width: "100%", height: "100%", objectFit: "cover", transition: "opacity 0.3s" }} />
+          </div>
+          {/* Thumbnails */}
+          {images.length > 1 && (
+            <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(images.length, 4)}, 1fr)`, gap: "0.4rem" }}>
+              {images.slice(0, 4).map((img, i) => (
+                <div key={i} onClick={() => setActiveImage(i)}
+                  style={{ borderRadius: "10px", overflow: "hidden", height: "64px", cursor: "pointer", border: `2px solid ${activeImage === i ? C.primary : "transparent"}`, opacity: activeImage === i ? 1 : 0.55, transition: "all 0.18s" }}>
+                  <img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ══════════ ABOUT ══════════ */}
+        {(creator.creator_description ?? creator.bio ?? profile?.bio) && (
+          <>
+            <div>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.6rem" }}>About</p>
+              <p style={{ fontSize: "1rem", color: "#5C4A3A", lineHeight: 1.9, margin: 0 }}>
+                {creator.creator_description ?? creator.bio ?? profile?.bio}
+              </p>
+            </div>
+            <Divider />
+          </>
+        )}
+
+        {/* ══════════ SKILLS ══════════ */}
+        {skills.length > 0 && (
+          <>
+            <div>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Skills & Specialisations</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {skills.map(skill => (
+                  <span key={skill} style={{ background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: "8px", padding: "0.35rem 0.85rem", fontSize: "0.82rem", fontWeight: 600, color: "#5C4A3A" }}>
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <Divider />
+          </>
+        )}
+
+        {/* ══════════ AVAILABLE FOR ══════════ */}
+        {creator.occasion_types && creator.occasion_types.length > 0 && (
+          <>
+            <div>
+              <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>Available For</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+                {creator.occasion_types.map(occ => (
+                  <div key={occ} style={{ display: "flex", alignItems: "center", gap: "0.4rem", background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: "10px", padding: "0.45rem 0.9rem" }}>
+                    <span style={{ fontSize: "0.95rem" }}>{OCCASION_ICONS[occ] ?? "🎪"}</span>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#5C4A3A" }}>{occ}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: "0.875rem", backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", borderRadius: "10px", padding: "0.75rem 1rem", display: "flex", gap: "0.625rem", alignItems: "flex-start" }}>
-                <span style={{ fontSize: "0.9rem", flexShrink: 0 }}>ℹ️</span>
-                <p style={{ fontSize: "0.78rem", color: "#8B4513", lineHeight: 1.65 }}>
-                  <strong>Important:</strong> Creators review every booking request and can accept or decline. Sending a request is not a confirmed booking — confirmation happens only after creator acceptance and advance payment. No open slot = no booking possible.
-                </p>
+            </div>
+            <Divider />
+          </>
+        )}
+
+        {/* ══════════ HOW BOOKING WORKS ══════════ */}
+        <div style={{ marginBottom: "2.5rem" }}>
+          <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.75rem" }}>How Booking Works</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "0.75rem", marginBottom: "0.75rem" }} className="how-grid">
+            {[
+              { n: "01", icon: "📋", title: "Send a Request",   desc: "Fill your event details — date, occasion, location, budget." },
+              { n: "02", icon: "✅", title: "Creator Responds", desc: "Creator accepts or declines within 24 hours and sets a payment amount." },
+              { n: "03", icon: "💳", title: "Pay & Confirm",    desc: "Pay on the platform. Booking is confirmed instantly." },
+            ].map(s => (
+              <div key={s.n} style={{ background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.1rem 1.1rem 1rem", position: "relative", overflow: "hidden" }}>
+                <span style={{ position: "absolute", top: "0.1rem", right: "0.6rem", fontFamily: "var(--font-playfair)", fontSize: "2.2rem", fontWeight: 900, color: C.surface, lineHeight: 1, userSelect: "none" }}>{s.n}</span>
+                <span style={{ fontSize: "1.1rem", display: "block", marginBottom: "0.45rem" }}>{s.icon}</span>
+                <p style={{ fontFamily: "var(--font-playfair)", fontSize: "0.85rem", fontWeight: 800, color: C.dark, marginBottom: "0.3rem" }}>{s.title}</p>
+                <p style={{ fontSize: "0.75rem", color: "#6B5240", lineHeight: 1.65, margin: 0 }}>{s.desc}</p>
               </div>
-            </Section>
-
-            {/* About */}
-            {(creator.creator_description ?? profile?.bio) && (
-              <Section title="About This Creator">
-                <p style={{ fontSize: "0.95rem", color: "#5C4A3A", lineHeight: 1.8 }}>
-                  {creator.creator_description ?? profile?.bio}
-                </p>
-              </Section>
-            )}
-
-            {/* Skills */}
-            {skills.length > 0 && (
-              <Section title="Skills & Specialisations">
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                  {skills.map((skill) => (
-                    <span key={skill} style={{ backgroundColor: "#F5EFE7", border: "1px solid #E8DED0", borderRadius: "100px", padding: "0.4rem 0.875rem", fontSize: "0.82rem", fontWeight: 500, color: "#5C4A3A" }}>
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            {/* Occasions */}
-            {occasions.length > 0 && (
-              <Section title="Available For">
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: "0.625rem" }}>
-                  {occasions.map((occ) => (
-                    <div key={occ} style={{ display: "flex", alignItems: "center", gap: "0.5rem", backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "10px", padding: "0.55rem 0.875rem" }}>
-                      <span style={{ fontSize: "1rem" }}>{OCCASION_ICONS[occ] ?? OCCASION_ICONS["default"]}</span>
-                      <span style={{ fontSize: "0.8rem", fontWeight: 500, color: "#5C4A3A" }}>{occ}</span>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            {/* Pricing & Advance */}
-            <Section title="Pricing & Advance">
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.875rem" }}>
-                <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "14px", padding: "1.25rem" }}>
-                  <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Starting Price</p>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.8rem", fontWeight: 900, color: "#C4703A" }}>₹{creator.starting_price.toLocaleString()}</p>
-                  <p style={{ fontSize: "0.75rem", color: "#9B7B60", marginTop: "0.25rem" }}>Custom pricing via request for complex briefs</p>
-                </div>
-                <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "14px", padding: "1.25rem" }}>
-                  <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Advance Required</p>
-                  <p style={{ fontFamily: "var(--font-playfair)", fontSize: "1.8rem", fontWeight: 900, color: "#1C1410" }}>{advancePct}%</p>
-                  <p style={{ fontSize: "0.75rem", color: "#9B7B60", marginTop: "0.25rem" }}>Paid on platform to confirm. Balance to creator directly.</p>
-                </div>
-              </div>
-              <div style={{ marginTop: "0.75rem", backgroundColor: "#F5EFE7", border: "1px solid #E8DED0", borderRadius: "10px", padding: "0.75rem 1rem", fontSize: "0.78rem", color: "#6B5240", lineHeight: 1.7 }}>
-                💡 <strong>How payment works:</strong> Pay the advance ({advancePct}%) through CultureJeevan when the request is confirmed. On the day of the event, scan the QR code to release the advance to the creator. Pay the remaining {100 - advancePct}% directly — cash or UPI — after the work is done. CultureJeevan takes a 10% commission on the advance only.
-              </div>
-            </Section>
+            ))}
           </div>
+          <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "10px", padding: "0.7rem 1rem", display: "flex", gap: "0.5rem" }}>
+            <span style={{ fontSize: "0.85rem", flexShrink: 0 }}>ℹ️</span>
+            <p style={{ fontSize: "0.75rem", color: "#8B4513", lineHeight: 1.65, margin: 0 }}>
+              Request bhejne se booking confirm <strong>nahi</strong> hoti. Creator accept kare aur payment ho — tab confirm hoti hai.
+            </p>
+          </div>
+        </div>
 
-          {/* ── RIGHT COLUMN — Booking Request Card ── */}
-          <div style={{
-            position: "sticky",
-            top: "80px",
-            maxHeight: "calc(100vh - 100px)",
-            overflowY: "auto",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#E8DED0 transparent",
-          }}>
+        {/* ══════════════════════════════════════════ */}
+        {/* ══════════ BOOKING FORM (full-width) ══════════ */}
+        {/* ══════════════════════════════════════════ */}
+        <div style={{ background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: "20px", padding: "2rem", boxShadow: "0 4px 24px rgba(196,112,58,0.06)" }}>
 
-            {submitted ? (
-              /* ── Success State ── */
-              <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "20px", padding: "2rem 1.5rem", boxShadow: "0 8px 40px rgba(196,112,58,0.10)", textAlign: "center" }}>
-                <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🎉</div>
-                <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", fontWeight: 800, color: "#1C1410", marginBottom: "0.5rem" }}>Request Sent!</h3>
-                <p style={{ fontSize: "0.85rem", color: "#6B5240", lineHeight: 1.7, marginBottom: "1.25rem" }}>
-                  <strong>{profile?.full_name ?? "The creator"}</strong> will review your request and respond. If they accept, you'll get 24 hours to pay the advance and confirm.
-                </p>
-                <div style={{ backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", borderRadius: "10px", padding: "0.875rem", marginBottom: "1.25rem", textAlign: "left" }}>
-                  <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.5rem" }}>What Happens Next</p>
-                  {[
-                    "Creator reviews your event details",
-                    "Accepts or sends a custom quote",
-                    "You confirm and pay advance within 24 hours",
-                    "Booking confirmed — see it in My Bookings",
-                  ].map((step, i) => (
-                    <div key={i} style={{ display: "flex", gap: "0.5rem", marginBottom: "0.3rem", fontSize: "0.78rem", color: "#5C4A3A" }}>
-                      <span style={{ color: "#C4703A", fontWeight: 700, flexShrink: 0 }}>→</span> {step}
-                    </div>
-                  ))}
-                </div>
-                <Link href="/my-bookings"
-                  style={{ display: "block", width: "100%", padding: "0.75rem", backgroundColor: "#C4703A", color: "#FAF7F2", borderRadius: "10px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", boxSizing: "border-box", textAlign: "center" }}>
+          {submitted ? (
+            /* ── Success state ── */
+            <div style={{ textAlign: "center", maxWidth: "440px", margin: "0 auto", padding: "1rem 0" }}>
+              <div style={{ width: "56px", height: "56px", borderRadius: "50%", background: "#EFF6EE", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.6rem", margin: "0 auto 1.25rem" }}>🎉</div>
+              <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.4rem", fontWeight: 900, color: C.dark, marginBottom: "0.5rem" }}>Request Sent!</h3>
+              <p style={{ fontSize: "0.88rem", color: "#6B5240", lineHeight: 1.75, marginBottom: "1.5rem" }}>
+                <strong>{profile?.full_name ?? "The creator"}</strong> will review your request within 24 hours. If accepted, they'll set a payment amount to confirm the booking.
+              </p>
+              <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1.5rem", textAlign: "left" }}>
+                <p style={{ ...labelStyle, marginBottom: "0.6rem" }}>Next Steps</p>
+                {["Creator reviews your event brief", "Accepts or declines within 24 hrs", "If accepted — sets payment amount", "You pay → booking confirmed"].map((s, i) => (
+                  <div key={i} style={{ display: "flex", gap: "0.5rem", fontSize: "0.8rem", color: "#5C4A3A", marginBottom: "0.3rem" }}>
+                    <span style={{ color: C.primary, fontWeight: 700, flexShrink: 0 }}>→</span>{s}
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+                <Link href="/my-bookings" style={{ flex: 1, display: "block", padding: "0.8rem", background: C.primary, color: C.bg, borderRadius: "10px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", textAlign: "center" }}>
                   View My Bookings →
                 </Link>
-                <button onClick={() => { setSubmitted(false); setRequestStep("slot"); setSelectedSlotId(null); setSelectedDate(""); }}
-                  style={{ width: "100%", marginTop: "0.5rem", padding: "0.6rem", backgroundColor: "transparent", border: "1.5px solid #E8DED0", borderRadius: "10px", fontSize: "0.82rem", fontWeight: 600, color: "#7A5C42", cursor: "pointer" }}>
+                <button onClick={resetForm} style={{ flex: 1, padding: "0.8rem", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: "10px", fontSize: "0.8rem", fontWeight: 600, color: C.muted, cursor: "pointer", fontFamily: "inherit" }}>
                   Send Another Request
                 </button>
               </div>
-            ) : (
-              <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "20px", padding: "1.25rem", boxShadow: "0 8px 40px rgba(196,112,58,0.10)" }}>
+            </div>
 
-                {/* Header */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.875rem" }}>
-                  <p style={{ fontSize: "0.72rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                    Send Booking Request
-                  </p>
-                  {/* Step indicator */}
-                  <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
-                    {["slot", "details"].map((step, i) => (
-                      <div key={step} style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                        <div style={{ width: "18px", height: "18px", borderRadius: "50%", backgroundColor: requestStep === step ? "#C4703A" : (requestStep === "details" && step === "slot") ? "#C4703A" : "#E8DED0", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: "0.6rem", fontWeight: 800, color: (requestStep === step || (requestStep === "details" && step === "slot")) ? "#FAF7F2" : "#B8A090" }}>
-                            {(requestStep === "details" && step === "slot") ? "✓" : i + 1}
-                          </span>
-                        </div>
-                        {i === 0 && <div style={{ width: "20px", height: "2px", backgroundColor: requestStep === "details" ? "#C4703A" : "#E8DED0" }} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.25rem" }}>Book this Creator</p>
+                <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", fontWeight: 900, color: C.dark, margin: 0 }}>
+                  {profile?.full_name ?? creator.category}
+                </h2>
+              </div>
 
-                {/* Request Type Toggle */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", backgroundColor: "#F5EFE7", borderRadius: "8px", padding: "3px", marginBottom: "0.875rem", gap: "2px" }}>
-                  {(["standard", "custom"] as const).map((t) => (
-                    <button key={t} onClick={() => setRequestType(t)}
-                      style={{ padding: "0.4rem", borderRadius: "6px", border: "none", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", transition: "all 0.2s", backgroundColor: requestType === t ? "#C4703A" : "transparent", color: requestType === t ? "#FAF7F2" : "#7A5C42" }}>
-                      {t === "standard" ? "📋 Standard" : "✨ Custom Brief"}
-                    </button>
-                  ))}
-                </div>
-                {requestType === "custom" && (
-                  <div style={{ backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", borderRadius: "8px", padding: "0.6rem 0.875rem", marginBottom: "0.875rem", fontSize: "0.75rem", color: "#8B4513", lineHeight: 1.6 }}>
-                    Describe your scope. The creator will reply with a custom price. You'll have 24 hours to pay and confirm.
-                  </div>
-                )}
+              <StepIndicator step={step} />
 
-                {/* ── STEP 1: Slot Selection ── */}
-                {requestStep === "slot" && (
+              {/* Two-column layout for form fields */}
+              <div style={{ maxWidth: "640px" }}>
+
+                {/* ── STEP 1 ── */}
+                {step === 1 && (
                   <>
-                    {/* Slot Type Tabs */}
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Slot Type</label>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.35rem" }}>
-                        {(["hourly", "half_day", "full_day", "multi_day"] as const).map((t) => (
-                          <button key={t} onClick={() => { setSlotType(t); setSelectedSlotId(null); setSelectedDate(""); }}
-                            style={{ padding: "0.45rem", borderRadius: "8px", border: `1.5px solid ${slotType === t ? "#C4703A" : "#E8DED0"}`, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", backgroundColor: slotType === t ? "#FDF0E6" : "#FAF7F2", color: slotType === t ? "#C4703A" : "#7A5C42", transition: "all 0.2s" }}>
-                            {t === "hourly" ? "⏱ Hourly" : t === "half_day" ? "🌤 Half Day" : t === "full_day" ? "☀️ Full Day" : "📅 Multi-Day"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Date picker */}
-                    <div style={{ marginBottom: "0.75rem" }}>
-                      <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Select Date</label>
-                      {availableDates.length > 0 ? (
-                        <div style={{ maxHeight: "100px", overflowY: "auto", display: "flex", flexWrap: "wrap", gap: "0.3rem", scrollbarWidth: "thin" }}>
-                          {availableDates.map((d) => {
-                            const dateObj = new Date(d + "T00:00:00");
-                            const label = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "short", weekday: "short" });
-                            return (
-                              <button key={d} onClick={() => { setSelectedDate(d); setSelectedSlotId(null); }}
-                                style={{ padding: "0.3rem 0.6rem", borderRadius: "8px", border: `1.5px solid ${selectedDate === d ? "#C4703A" : "#E8DED0"}`, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer", backgroundColor: selectedDate === d ? "#FDF0E6" : "#FAF7F2", color: selectedDate === d ? "#C4703A" : "#7A5C42", transition: "all 0.15s", whiteSpace: "nowrap" }}>
-                                {label}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div style={{ backgroundColor: "#F5EFE7", borderRadius: "8px", padding: "0.75rem", textAlign: "center", fontSize: "0.78rem", color: "#9B7B60" }}>
-                          No open slots for this type yet.<br />Try a different slot type or send a Custom Brief.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Slots for chosen date */}
-                    {selectedDate && slotsForDate.length > 0 && (
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-                          Available Slots
-                        </label>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
-                          {slotsForDate.map((slot) => {
-                            const isSelected = selectedSlotId === slot.id;
-                            let slotLabel = "";
-                            if (slot.slot_type === "hourly") {
-                              slotLabel = `${slot.start_time} – ${slot.end_time}`;
-                            } else if (slot.slot_type === "half_day" && slot.half_day_period) {
-                              const period = HALF_DAY_PERIODS.find((p) => p.key === slot.half_day_period);
-                              slotLabel = period ? `${period.label} · ${period.time}` : slot.half_day_period;
-                            } else if (slot.slot_type === "full_day") {
-                              slotLabel = "Full Day";
-                            } else if (slot.slot_type === "multi_day") {
-                              slotLabel = `${slot.slot_date} → ${slot.end_date ?? "…"}`;
-                            }
-
-                            return (
-                              <button key={slot.id} onClick={() => setSelectedSlotId(isSelected ? null : slot.id)}
-                                style={{ padding: "0.55rem 0.875rem", borderRadius: "8px", border: `1.5px solid ${isSelected ? "#C4703A" : "#E8DED0"}`, fontSize: "0.8rem", fontWeight: 600, cursor: "pointer", backgroundColor: isSelected ? "#FDF0E6" : "#FAF7F2", color: isSelected ? "#C4703A" : "#5C4A3A", transition: "all 0.15s", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span>{slotLabel}</span>
-                                {isSelected && <span style={{ fontSize: "0.7rem", backgroundColor: "#C4703A", color: "#FAF7F2", borderRadius: "100px", padding: "0.1rem 0.45rem" }}>Selected ✓</span>}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Multi-day end date */}
-                    {slotType === "multi_day" && selectedSlotId && (
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>End Date</label>
-                        <input type="date" min={selectedDate || new Date().toISOString().split("T")[0]}
-                          value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                          style={{ width: "100%", padding: "0.55rem 0.75rem", border: "1.5px solid #E8DED0", borderRadius: "8px", fontSize: "0.85rem", color: "#1C1410", backgroundColor: "#FAF7F2", outline: "none", boxSizing: "border-box" }}
-                          onFocus={(e) => (e.currentTarget.style.borderColor = "#C4703A")}
-                          onBlur={(e) => (e.currentTarget.style.borderColor = "#E8DED0")} />
-                      </div>
-                    )}
-
-                    {/* Custom brief scope (shown on step 1 for custom type) */}
-                    {requestType === "custom" && (
-                      <div style={{ marginBottom: "0.75rem" }}>
-                        <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Describe Your Brief</label>
-                        <textarea value={customScope} onChange={(e) => setCustomScope(e.target.value)} rows={3}
-                          placeholder="E.g. 2-day destination wedding, 4 functions, drone coverage needed, final deliverables — 300 edited photos + 10-min film"
-                          style={{ width: "100%", padding: "0.625rem 0.75rem", border: "1.5px solid #E8DED0", borderRadius: "8px", fontSize: "0.8rem", color: "#1C1410", backgroundColor: "#FAF7F2", outline: "none", resize: "vertical", boxSizing: "border-box", fontFamily: "inherit", lineHeight: 1.6 }}
-                          onFocus={(e) => (e.currentTarget.style.borderColor = "#C4703A")}
-                          onBlur={(e) => (e.currentTarget.style.borderColor = "#E8DED0")} />
-                        <div style={{ marginTop: "0.35rem" }}>
-                          <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.25rem" }}>Your Budget (Optional)</label>
-                          <input type="text" value={customBudget} onChange={(e) => setCustomBudget(e.target.value)}
-                            placeholder="₹ your budget or range"
-                            style={{ width: "100%", padding: "0.5rem 0.75rem", border: "1.5px solid #E8DED0", borderRadius: "8px", fontSize: "0.8rem", color: "#1C1410", backgroundColor: "#FAF7F2", outline: "none", boxSizing: "border-box" }}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = "#C4703A")}
-                            onBlur={(e) => (e.currentTarget.style.borderColor = "#E8DED0")} />
-                        </div>
-                      </div>
-                    )}
-
-                    <button
-                      onClick={() => setRequestStep("details")}
-                      disabled={!canProceedToDetails && availableDates.length > 0}
-                      style={{ width: "100%", padding: "0.75rem", border: "none", borderRadius: "10px", fontSize: "0.875rem", fontWeight: 700, cursor: (canProceedToDetails || availableDates.length === 0) ? "pointer" : "not-allowed", backgroundColor: (canProceedToDetails || (requestType === "custom" && customScope.trim())) ? "#C4703A" : "#E8DED0", color: (canProceedToDetails || (requestType === "custom" && customScope.trim())) ? "#FAF7F2" : "#B8A090", transition: "background-color 0.2s" }}
-                      onMouseEnter={(e) => { if (canProceedToDetails) e.currentTarget.style.backgroundColor = "#A85C2E"; }}
-                      onMouseLeave={(e) => { if (canProceedToDetails) e.currentTarget.style.backgroundColor = "#C4703A"; }}>
-                      {!selectedDate && availableDates.length > 0 ? "Select a Date First"
-                        : !selectedSlotId && availableDates.length > 0 ? "Pick a Slot to Continue"
-                        : "Continue → Add Event Details"}
-                    </button>
-                  </>
-                )}
-
-                {/* ── STEP 2: Event Details ── */}
-                {requestStep === "details" && (
-                  <>
-                    {/* Slot summary */}
-                    <div style={{ backgroundColor: "#F5EFE7", border: "1px solid #E8DED0", borderRadius: "10px", padding: "0.625rem 0.875rem", marginBottom: "0.875rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }} className="form-2col">
                       <div>
-                        <p style={{ fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.15rem" }}>Selected Slot</p>
-                        <p style={{ fontSize: "0.8rem", fontWeight: 600, color: "#1C1410" }}>
-                          {selectedDate
-                            ? new Date(selectedDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long" })
-                            : "Custom Brief"}
-                          {" · "}
-                          {slotType === "hourly" ? "Hourly"
-                            : slotType === "half_day" ? HALF_DAY_PERIODS.find((p) => p.key === selectedSlot?.half_day_period)?.label ?? "Half Day"
-                            : slotType === "full_day" ? "Full Day"
-                            : `Multi-Day → ${endDate}`}
-                        </p>
+                        <label style={labelStyle}>Event Date *</label>
+                        <input type="date" min={today} value={eventDate}
+                          onChange={e => setEventDate(e.target.value)}
+                          style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
                       </div>
-                      <button onClick={() => setRequestStep("slot")}
-                        style={{ fontSize: "0.67rem", fontWeight: 600, color: "#C4703A", backgroundColor: "#FDF0E6", border: "1px solid #F0DCC8", padding: "0.2rem 0.5rem", borderRadius: "100px", cursor: "pointer" }}>
-                        Change
-                      </button>
+                      <div>
+                        <label style={labelStyle}>Event Location *</label>
+                        <input type="text" value={locationText} onChange={e => setLocationText(e.target.value)}
+                          placeholder="Venue, area, city" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+                      </div>
                     </div>
 
-                    {/* Form fields */}
-                    {[
-                      { label: "Your Name", value: requesterName, setter: setRequesterName, placeholder: "Full name", type: "text" },
-                      { label: "Your Phone", value: requesterPhone, setter: setRequesterPhone, placeholder: "10-digit number", type: "tel" },
-                      { label: "Event Location", value: locationText, setter: setLocationText, placeholder: "Venue name, area, city", type: "text" },
-                    ].map((field) => (
-                      <div key={field.label} style={{ marginBottom: "0.625rem" }}>
-                        <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.3rem" }}>{field.label}</label>
-                        <input type={field.type} value={field.value} onChange={(e) => field.setter(e.target.value)}
-                          placeholder={field.placeholder}
-                          style={{ width: "100%", padding: "0.55rem 0.75rem", border: "1.5px solid #E8DED0", borderRadius: "8px", fontSize: "0.85rem", color: "#1C1410", backgroundColor: "#FAF7F2", outline: "none", boxSizing: "border-box" }}
-                          onFocus={(e) => (e.currentTarget.style.borderColor = "#C4703A")}
-                          onBlur={(e) => (e.currentTarget.style.borderColor = "#E8DED0")} />
-                      </div>
-                    ))}
-
-                    {/* Occasion type */}
-                    <div style={{ marginBottom: "0.625rem" }}>
-                      <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.3rem" }}>Occasion Type</label>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
-                        {(occasions.length > 0 ? occasions : Object.keys(OCCASION_ICONS).filter((k) => k !== "default")).map((occ) => (
+                    <div style={{ marginBottom: "1rem" }}>
+                      <label style={labelStyle}>Occasion Type *</label>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                        {occasions.map(occ => (
                           <button key={occ} onClick={() => setOccasionType(occ)}
-                            style={{ padding: "0.3rem 0.6rem", borderRadius: "100px", border: `1.5px solid ${occasionType === occ ? "#C4703A" : "#E8DED0"}`, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer", backgroundColor: occasionType === occ ? "#FDF0E6" : "#FAF7F2", color: occasionType === occ ? "#C4703A" : "#7A5C42", transition: "all 0.15s" }}>
+                            style={{ padding: "0.3rem 0.7rem", borderRadius: "100px", border: `1.5px solid ${occasionType === occ ? C.primary : C.border}`, fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", background: occasionType === occ ? C.cream : C.bg, color: occasionType === occ ? C.primary : C.muted, transition: "all 0.15s", fontFamily: "inherit" }}>
                             {OCCASION_ICONS[occ] ?? "🎪"} {occ}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    {/* Note */}
-                    <div style={{ marginBottom: "0.875rem" }}>
-                      <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "0.3rem" }}>Additional Note (Optional)</label>
-                      <textarea value={eventNote} onChange={(e) => setEventNote(e.target.value)} rows={2}
-                        placeholder="Any specific requirements, references, or context for the creator..."
-                        style={{ width: "100%", padding: "0.55rem 0.75rem", border: "1.5px solid #E8DED0", borderRadius: "8px", fontSize: "0.8rem", color: "#1C1410", backgroundColor: "#FAF7F2", outline: "none", resize: "none", boxSizing: "border-box", fontFamily: "inherit", lineHeight: 1.6 }}
-                        onFocus={(e) => (e.currentTarget.style.borderColor = "#C4703A")}
-                        onBlur={(e) => (e.currentTarget.style.borderColor = "#E8DED0")} />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1rem" }} className="form-2col">
+                      <div>
+                        <label style={labelStyle}>Your Budget (Optional)</label>
+                        <input type="text" value={budget} onChange={e => setBudget(e.target.value)}
+                          placeholder="e.g. ₹5,000 – ₹10,000" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <label style={labelStyle}>
+                          {occasionType === "Other" ? "Describe Your Occasion *" : "Additional Note (Optional)"}
+                        </label>
+                        <textarea value={eventNote} onChange={e => setEventNote(e.target.value)} rows={3}
+                          placeholder={occasionType === "Other" ? "Kya occasion hai? Briefly batao..." : "Specific requirements, references, mood..."}
+                          style={{ ...inputStyle, resize: "none", lineHeight: 1.65 }}
+                          onFocus={focusIn} onBlur={focusOut} />
+                        {occasionType === "Other" && !eventNote.trim() && (
+                          <p style={{ fontSize: "0.68rem", color: "#C0392B", marginTop: "0.25rem" }}>Please describe your occasion.</p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Price preview */}
-                    <div style={{ backgroundColor: "#F5EFE7", borderRadius: "10px", padding: "0.75rem 0.875rem", marginBottom: "0.875rem" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
-                        <span style={{ fontSize: "0.78rem", color: "#7A5C42" }}>
-                          {requestType === "custom" ? "Price (set by creator)" : "Starting Price"}
-                        </span>
-                        <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "#5C4A3A" }}>
-                          {requestType === "custom" ? "TBD" : `₹${creator.starting_price.toLocaleString()}`}
-                        </span>
-                      </div>
-                      <div style={{ borderTop: "1px dashed #E8DED0", paddingTop: "0.35rem", display: "flex", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: "0.78rem", color: "#7A5C42" }}>Advance ({advancePct}%)</span>
-                        <span style={{ fontFamily: "var(--font-playfair)", fontSize: "1rem", fontWeight: 800, color: "#C4703A" }}>
-                          {requestType === "custom" ? "After quote" : `₹${advanceAmount.toLocaleString()}`}
-                        </span>
-                      </div>
-                      {requestType !== "custom" && (
-                        <p style={{ fontSize: "0.67rem", color: "#B8A090", marginTop: "0.25rem" }}>
-                          Balance ₹{balanceAmount.toLocaleString()} paid directly to creator after work.
+                    <button onClick={() => setStep(2)} disabled={!step1Valid}
+                      style={{ padding: "0.82rem 2rem", border: "none", borderRadius: "10px", fontSize: "0.9rem", fontWeight: 700, cursor: step1Valid ? "pointer" : "not-allowed", background: step1Valid ? C.primary : "#E2DAD0", color: step1Valid ? "#FAF8F5" : C.subtle, transition: "background 0.2s", fontFamily: "inherit" }}>
+                      Continue → Your Info
+                    </button>
+                  </>
+                )}
+
+                {/* ── STEP 2 ── */}
+                {step === 2 && (
+                  <>
+                    {/* Event summary pill */}
+                    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "10px", padding: "0.65rem 1rem", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
+                      <div>
+                        <p style={{ fontSize: "0.82rem", fontWeight: 700, color: C.dark, margin: "0 0 0.1rem" }}>
+                          {new Date(eventDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "long", year: "numeric" })}
                         </p>
+                        <p style={{ fontSize: "0.74rem", color: C.muted, margin: 0 }}>{occasionType} · {locationText}</p>
+                      </div>
+                      <button onClick={() => setStep(1)} style={{ fontSize: "0.7rem", fontWeight: 700, color: C.primary, background: C.cream, border: "1px solid #F0DCC8", padding: "0.2rem 0.6rem", borderRadius: "100px", cursor: "pointer", fontFamily: "inherit" }}>
+                        Edit
+                      </button>
+                    </div>
+
+                    {(requesterName || requesterPhone) && (
+                      <div style={{ background: "#EFF6EE", border: "1px solid #C3E0BF", borderRadius: "8px", padding: "0.5rem 0.85rem", marginBottom: "1rem", display: "flex", gap: "0.4rem", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.9rem" }}>✅</span>
+                        <p style={{ fontSize: "0.72rem", color: "#2E6B28", margin: 0 }}>Profile se auto-fill kiya gaya hai. Edit karo agar zaroorat ho.</p>
+                      </div>
+                    )}
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.25rem" }} className="form-2col">
+                      <div>
+                        <label style={labelStyle}>Your Name *</label>
+                        <input type="text" value={requesterName} onChange={e => setRequesterName(e.target.value)}
+                          placeholder="Full name" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Your Phone *</label>
+                        <input type="tel" value={requesterPhone} onChange={e => setRequesterPhone(e.target.value.replace(/\D/g, ""))}
+                          placeholder="10-digit number" maxLength={10} style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+                        {requesterPhone && requesterPhone.length < 10 && (
+                          <p style={{ fontSize: "0.68rem", color: "#C0392B", marginTop: "0.25rem" }}>10-digit number daalo</p>
+                        )}
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Your City</label>
+                        <input type="text" value={requesterCity} onChange={e => setRequesterCity(e.target.value)}
+                          placeholder="e.g. Lucknow" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: "0.75rem" }}>
+                      <button onClick={() => setStep(1)} style={{ padding: "0.78rem 1.5rem", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: "10px", fontSize: "0.85rem", fontWeight: 600, color: C.muted, cursor: "pointer", fontFamily: "inherit" }}>
+                        ← Back
+                      </button>
+                      <button onClick={() => setStep(3)} disabled={!step2Valid}
+                        style={{ padding: "0.78rem 2rem", border: "none", borderRadius: "10px", fontSize: "0.9rem", fontWeight: 700, cursor: step2Valid ? "pointer" : "not-allowed", background: step2Valid ? C.primary : "#E2DAD0", color: step2Valid ? "#FAF8F5" : C.subtle, transition: "background 0.2s", fontFamily: "inherit" }}>
+                        Review & Confirm →
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {/* ── STEP 3 ── */}
+                {step === 3 && (
+                  <>
+                    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.1rem 1.25rem", marginBottom: "1.25rem" }}>
+                      <p style={{ ...labelStyle, marginBottom: "0.75rem" }}>Request Summary</p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 1.5rem" }}>
+                        {[
+                          { label: "Creator",  value: profile?.full_name ?? creator.category },
+                          { label: "Date",     value: new Date(eventDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" }) },
+                          { label: "Occasion", value: occasionType },
+                          { label: "Location", value: locationText },
+                          ...(budget ? [{ label: "Budget", value: budget }] : []),
+                          { label: "Name",     value: requesterName },
+                          { label: "Phone",    value: requesterPhone },
+                          ...(requesterCity ? [{ label: "City", value: requesterCity }] : []),
+                        ].map(({ label, value }) => (
+                          <div key={label} style={{ padding: "0.4rem 0", borderBottom: `1px solid ${C.border}` }}>
+                            <p style={{ fontSize: "0.65rem", fontWeight: 700, color: C.subtle, textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 0.1rem" }}>{label}</p>
+                            <p style={{ fontSize: "0.82rem", fontWeight: 700, color: C.dark, margin: 0, wordBreak: "break-word" }}>{value}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {eventNote && (
+                        <div style={{ marginTop: "0.75rem", padding: "0.55rem 0.75rem", background: C.cream, borderRadius: "8px", fontSize: "0.75rem", color: "#6B5240", lineHeight: 1.65 }}>
+                          <strong>Note: </strong>{eventNote}
+                        </div>
                       )}
                     </div>
 
-                    <button onClick={handleSubmitRequest} disabled={!canSubmit || submitting}
-                      style={{ width: "100%", padding: "0.75rem", border: "none", borderRadius: "10px", fontSize: "0.9rem", fontWeight: 700, cursor: (canSubmit && !submitting) ? "pointer" : "not-allowed", backgroundColor: (canSubmit && !submitting) ? "#C4703A" : "#E8DED0", color: (canSubmit && !submitting) ? "#FAF7F2" : "#B8A090", transition: "background-color 0.2s" }}
-                      onMouseEnter={(e) => { if (canSubmit && !submitting) e.currentTarget.style.backgroundColor = "#A85C2E"; }}
-                      onMouseLeave={(e) => { if (canSubmit && !submitting) e.currentTarget.style.backgroundColor = "#C4703A"; }}>
-                      {submitting ? "Sending Request…" : requestType === "custom" ? "Send Custom Brief →" : "Send Booking Request →"}
-                    </button>
+                    <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "10px", padding: "0.75rem 1rem", marginBottom: "1.25rem" }}>
+                      <p style={{ fontSize: "0.78rem", color: "#8B4513", lineHeight: 1.65, margin: 0 }}>
+                        💳 <strong>Abhi koi payment nahi.</strong> Creator accept karega toh payment amount set karega. Tab confirm hogi booking.
+                      </p>
+                    </div>
 
-                    <p style={{ fontSize: "0.67rem", color: "#B8A090", textAlign: "center", marginTop: "0.5rem", lineHeight: 1.5 }}>
-                      📋 No payment yet · Creator reviews first<br />
-                      Advance paid only after acceptance
+                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                      <button onClick={() => setStep(2)} disabled={submitting}
+                        style={{ padding: "0.78rem 1.5rem", background: "transparent", border: `1.5px solid ${C.border}`, borderRadius: "10px", fontSize: "0.85rem", fontWeight: 600, color: C.muted, cursor: "pointer", fontFamily: "inherit" }}>
+                        ← Edit
+                      </button>
+                      <button onClick={handleSubmit} disabled={submitting}
+                        style={{ flex: 1, padding: "0.88rem", border: "none", borderRadius: "10px", fontSize: "0.95rem", fontWeight: 700, cursor: submitting ? "not-allowed" : "pointer", background: submitting ? "#E2DAD0" : C.primary, color: submitting ? C.subtle : "#FAF8F5", transition: "background 0.2s", fontFamily: "inherit", boxShadow: submitting ? "none" : "0 4px 14px rgba(196,112,58,0.25)" }}>
+                        {submitting ? "Sending…" : "Send Booking Request →"}
+                      </button>
+                    </div>
+                    <p style={{ fontSize: "0.65rem", color: C.subtle, textAlign: "center", marginTop: "0.75rem", lineHeight: 1.5 }}>
+                      No payment yet · Creator reviews within 24 hrs
                     </p>
                   </>
                 )}
               </div>
-            )}
-
-            {/* Refund / Cancellation */}
-            <div style={{ marginTop: "0.625rem", backgroundColor: "#F5EFE7", border: "1px solid #E8DED0", borderRadius: "12px", padding: "0.75rem 1rem" }}>
-              <p style={{ fontSize: "0.67rem", fontWeight: 700, color: "#9B7B60", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: "0.35rem" }}>Cancellation Policy</p>
-              {[
-                { dot: "🟢", text: "Full refund if cancelled 5+ days before event" },
-                { dot: "🔴", text: "No refund if cancelled less than 5 days before" },
-                { dot: "🟠", text: "Creator no-show → advance returned in T+2 days" },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", gap: "0.4rem", fontSize: "0.73rem", color: "#6B5240", alignItems: "flex-start", marginBottom: i < 2 ? "0.2rem" : 0 }}>
-                  <span style={{ flexShrink: 0 }}>{item.dot}</span>{item.text}
-                </div>
-              ))}
-            </div>
-          </div>
-
+            </>
+          )}
         </div>
+
+        {/* ══════════ CANCELLATION POLICY ══════════ */}
+        <div style={{ marginTop: "1.5rem", background: C.surface, border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.1rem 1.25rem" }}>
+          <p style={{ ...labelStyle, marginBottom: "0.6rem" }}>Cancellation Policy</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+            {[
+              { dot: "🟢", text: "Full refund if cancelled 5+ days before event" },
+              { dot: "🔴", text: "No refund if cancelled less than 5 days before" },
+              { dot: "🟠", text: "Creator no-show → payment returned in T+2 days" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", gap: "0.45rem", fontSize: "0.8rem", color: "#6B5240", alignItems: "flex-start" }}>
+                <span style={{ flexShrink: 0 }}>{item.dot}</span>{item.text}
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
-          .detail-grid { grid-template-columns: 1fr !important; }
-          .how-grid { grid-template-columns: 1fr !important; }
+        @media (max-width: 640px) {
+          .how-grid    { grid-template-columns: 1fr !important; }
+          .form-2col   { grid-template-columns: 1fr !important; }
         }
-        div::-webkit-scrollbar { width: 4px; }
-        div::-webkit-scrollbar-track { background: transparent; }
-        div::-webkit-scrollbar-thumb { background: #E8DED0; border-radius: 4px; }
+        @keyframes shimmer { to { background-position: -200% 0; } }
       `}</style>
     </div>
   );
