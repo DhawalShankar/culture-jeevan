@@ -15,7 +15,6 @@ interface CreatorData {
   languages: string | null;
   avg_rating: number | null;
   review_count: number;
-  advance_percent: number | null;
   full_name: string | null;
   city: string | null;
   instagram_handle: string | null;
@@ -398,7 +397,7 @@ export default function CreatorDashboard() {
 
       const { data: creatorRow, error: creatorError } = await supabase
         .from("creators")
-        .select("id, profile_id, category, starting_price, experience, languages, avg_rating, review_count, advance_percent")
+        .select("id, profile_id, category, starting_price, experience, languages, avg_rating, review_count")
         .eq("profile_id", user!.id)
         .maybeSingle();
 
@@ -421,7 +420,6 @@ export default function CreatorDashboard() {
           languages: creatorRow.languages ?? null,
           avg_rating: creatorRow.avg_rating ?? null,
           review_count: creatorRow.review_count ?? 0,
-          advance_percent: creatorRow.advance_percent ?? null,
           full_name: p.full_name ?? null,
           city: p.city ?? null,
           instagram_handle: p.instagram_handle ?? null,
