@@ -117,18 +117,18 @@ function PriceModal({
   const remaining = !isNaN(parsed) ? parsed - advance : 0;
   const valid     = !isNaN(parsed) && parsed > 0;
 
-  function submit() {
-    if (!valid) return;
-    setSaving(true);
-    // TODO: swap with Django API
-    // await fetch(`/api/booking-requests/${request.id}/accept/`, {
-    //   method: "POST", headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
-    // });
-    onSubmit(request.id, parsed, Number(advancePct));
-    setSaving(false);
-    onClose();
-  }
+  async function submit() {
+  if (!valid) return;
+  setSaving(true);
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
+  });
+  onSubmit(request.id, parsed, Number(advancePct));
+  setSaving(false);
+  onClose();
+}
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(28,20,16,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -392,22 +392,23 @@ export default function CreatorDashboard() {
     return () => clearInterval(interval);
   }, [creator?.id]);
 
-  function handleDecline(id: string) {
-    // TODO: swap with Django API
-    // await fetch(`/api/booking-requests/${id}/decline/`, { method: "POST" });
-    setBookingRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
-  }
+  async function handleDecline(id: string) {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`, {
+    method: "POST",
+  });
+  setBookingRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
+}
 
-  function handlePriceSubmit(id: string, price: number, advancePct: number) {
-    // TODO: swap with Django API
-    // await fetch(`/api/booking-requests/${id}/accept/`, {
-    //   method: "POST", headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ agreed_price: price, advance_percent: advancePct }),
-    // });
-    setBookingRequests(prev => prev.map(r =>
-      r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: advancePct } : r
-    ));
-  }
+  async function handlePriceSubmit(id: string, price: number, advancePct: number) {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/accept/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ agreed_price: price, advance_percent: advancePct }),
+  });
+  setBookingRequests(prev => prev.map(r =>
+    r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: advancePct } : r
+  ));
+}
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "completed");
   const totalRevenue      = confirmedBookings.reduce((s, b) => s + b.total_amount, 0);
