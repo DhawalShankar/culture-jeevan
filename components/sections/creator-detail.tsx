@@ -146,7 +146,7 @@ export default function CreatorDetail({ id }: { id: string }) {
     if (!user) return;
     async function fillPhone() {
       const sb = createClient();
-      const { data } = await sb.from("profiles").select("phone").eq("clerk_id", user!.id).single();
+      const { data } = await sb.from("profiles").select("phone").eq("id", user!.id).single();
       if (data?.phone) setPhone(data.phone);
     }
     fillPhone();
