@@ -131,7 +131,7 @@ function PriceModal({ request, onClose, onSubmit }: {
   onClose();
 
   try {
-    await fetch(`.../${request.id}/accept/`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
