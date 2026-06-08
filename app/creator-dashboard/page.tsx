@@ -125,24 +125,33 @@ function PriceModal({ request, onClose, onSubmit }: {
   async function submit() {
   if (!valid) return;
   setSaving(true);
-  
-  // ✅ Optimistically close modal + update parent instantly
-  onSubmit(request.id, parsed, Number(advancePct));
-  onClose();
 
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
-    });
-  } catch (e) {
-    console.error("Accept failed", e);
-    // Optional: rollback ya toast error show karo
-    } finally {
-      setSaving(false);
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error ?? `HTTP ${res.status}`);
     }
+
+    // Only update UI AFTER success confirmed
+    onSubmit(request.id, parsed, Number(advancePct));
+    onClose();
+
+  } catch (e) {
+    console.error("Accept failed:", e);
+    alert(`Could not accept booking: ${(e as Error).message}`);
+  } finally {
+    setSaving(false);
   }
+}
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(28,20,16,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -336,18 +345,25 @@ export default function CreatorDashboard() {
   }, [creator?.id]);
 
   async function handleDecline(id: string) {
-    // ✅ Pehle UI update karo — turant
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
-    
-    // Then API call background mein
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`, { method: "POST" });
-    } catch (e) {
-      console.error(e);
-      // Optional: rollback if API fails
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "pending" } : r));
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`,
+      { method: "POST" }
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error ?? `HTTP ${res.status}`);
     }
+
+    // Only update UI AFTER success confirmed
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
+
+  } catch (e) {
+    console.error("Decline failed:", e);
+    alert(`Could not decline booking: ${(e as Error).message}`);
   }
+}
   function handlePriceSubmit(id: string, price: number, pct: number) {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: pct } : r));
   }
