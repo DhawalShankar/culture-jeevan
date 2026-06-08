@@ -30,6 +30,7 @@ interface BookingRequest {
   budget: string | null;
   note: string | null;
   requester_phone: string;
+  requester_id: string | null;
   status: "pending" | "accepted" | "declined" | "paid" | "expired";
   agreed_price: number | null;
   advance_percent: number | null;
@@ -81,6 +82,29 @@ function fmtDate(s: string) {
 function advanceAmt(r: BookingRequest) {
   if (!r.agreed_price || !r.advance_percent) return 0;
   return Math.round((r.agreed_price * r.advance_percent) / 100);
+}
+
+// ── Enrich requests with requester names from profiles ────────
+async function enrichWithNames(
+  supabase: ReturnType<typeof createClient>,
+  rows: BookingRequest[]
+): Promise<BookingRequest[]> {
+  const ids = [...new Set(rows.map(r => r.requester_id).filter(Boolean))] as string[];
+  if (ids.length === 0) return rows;
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, city")
+    .in("id", ids);
+
+  const map: Record<string, { full_name: string | null; city: string | null }> = {};
+  (profiles ?? []).forEach(p => { map[p.id] = p; });
+
+  return rows.map(r => ({
+    ...r,
+    requester_name: r.requester_id ? (map[r.requester_id]?.full_name ?? null) : null,
+    requester_city: r.requester_id ? (map[r.requester_id]?.city ?? null) : null,
+  }));
 }
 
 // ── Price Modal ───────────────────────────────────────────────
@@ -177,14 +201,18 @@ function PriceModal({ request, onClose, onSubmit }: {
 // ── Request Card ──────────────────────────────────────────────
 function RequestCard({ req, onAccept, onDecline }: { req: BookingRequest; onAccept: (r: BookingRequest) => void; onDecline: (id: string) => void; }) {
   const icon = OCCASION_ICONS[req.occasion_type ?? "Other"] ?? "🎪";
+  const displayName = req.requester_name ?? req.requester_phone;
   return (
     <div style={{ background: "#fff", border: "1px solid #E8DED0", borderRadius: "14px", padding: "1.1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
           <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#FDF2E9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.25rem", flexShrink: 0 }}>{icon}</div>
           <div>
-            <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.15rem" }}>{req.requester_name ?? req.requester_phone}</p>
-            <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>{req.occasion_type ?? "Event"}{req.requester_city ? ` · 📍 ${req.requester_city}` : ""}</p>
+            <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.15rem" }}>{displayName}</p>
+            <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>
+              {req.occasion_type ?? "Event"}
+              {req.requester_city ? ` · 📍 ${req.requester_city}` : ""}
+            </p>
           </div>
         </div>
         <span style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", padding: "0.2rem 0.6rem", borderRadius: "100px", background: "#FFF8E1", color: "#F57F17" }}>New</span>
@@ -225,12 +253,12 @@ function RequestCard({ req, onAccept, onDecline }: { req: BookingRequest; onAcce
 // ── Main Dashboard ────────────────────────────────────────────
 export default function CreatorDashboard() {
   const { user } = useUser();
-  const [activeNav,       setActiveNav]   = useState("overview");
-  const [sidebarOpen,     setSidebarOpen] = useState(true);
-  const [creator,         setCreator]     = useState<CreatorData | null>(null);
-  const [requests,        setRequests]    = useState<BookingRequest[]>([]);
-  const [loading,         setLoading]     = useState(true);
-  const [pricingReq,      setPricingReq]  = useState<BookingRequest | null>(null);
+  const [activeNav,   setActiveNav]   = useState("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [creator,     setCreator]     = useState<CreatorData | null>(null);
+  const [requests,    setRequests]    = useState<BookingRequest[]>([]);
+  const [loading,     setLoading]     = useState(true);
+  const [pricingReq,  setPricingReq]  = useState<BookingRequest | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -266,11 +294,12 @@ export default function CreatorDashboard() {
 
         const { data: reqRows } = await supabase
           .from("booking_requests")
-          .select("id, occasion_type, event_date, location, budget, note, requester_phone, status, agreed_price, advance_percent, created_at")
+          .select("id, occasion_type, event_date, location, budget, note, requester_phone, requester_id, status, agreed_price, advance_percent, created_at")
           .eq("creator_id", creatorRow.id)
           .order("created_at", { ascending: false });
 
-        setRequests(reqRows ?? []);
+        const enriched = await enrichWithNames(supabase, (reqRows ?? []) as BookingRequest[]);
+        setRequests(enriched);
       }
       setLoading(false);
     }
@@ -284,10 +313,13 @@ export default function CreatorDashboard() {
       const supabase = createClient();
       const { data } = await supabase
         .from("booking_requests")
-        .select("id, occasion_type, event_date, location, budget, note, requester_phone, status, agreed_price, advance_percent, created_at")
+        .select("id, occasion_type, event_date, location, budget, note, requester_phone, requester_id, status, agreed_price, advance_percent, created_at")
         .eq("creator_id", creator.id)
         .order("created_at", { ascending: false });
-      if (data) setRequests(data);
+      if (data) {
+        const enriched = await enrichWithNames(supabase, data as BookingRequest[]);
+        setRequests(enriched);
+      }
     }, 20000);
     return () => clearInterval(interval);
   }, [creator?.id]);
@@ -304,26 +336,22 @@ export default function CreatorDashboard() {
   }
 
   // Derived
-  const pendingRequests  = requests.filter(r => r.status === "pending");
-  const handledRequests  = requests.filter(r => r.status !== "pending");
-  const confirmedReqs    = requests.filter(r => r.status === "paid");
-  const acceptedReqs     = requests.filter(r => r.status === "accepted");
+  const pendingRequests = requests.filter(r => r.status === "pending");
+  const handledRequests = requests.filter(r => r.status !== "pending");
+  const confirmedReqs   = requests.filter(r => r.status === "paid");
+  const acceptedReqs    = requests.filter(r => r.status === "accepted");
 
-  // Earnings = only advance actually collected on paid/confirmed requests
-  const totalCollected   = confirmedReqs.reduce((s, r) => s + advanceAmt(r), 0);
-  const pendingAdvance   = acceptedReqs.reduce((s, r) => s + advanceAmt(r), 0); // accepted but not yet paid
+  const totalCollected = confirmedReqs.reduce((s, r) => s + advanceAmt(r), 0);
+  const pendingAdvance = acceptedReqs.reduce((s, r) => s + advanceAmt(r), 0);
 
-  const thisMonth        = new Date().getMonth();
-  const thisYear         = new Date().getFullYear();
+  const thisMonth = new Date().getMonth();
+  const thisYear  = new Date().getFullYear();
   const monthCollected = confirmedReqs
-  .filter(r => { 
-    const d = new Date(r.created_at); 
-    return d.getMonth() === thisMonth && d.getFullYear() === thisYear; 
-  })
-  .reduce((s, r) => s + advanceAmt(r), 0);
+    .filter(r => { const d = new Date(r.created_at); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
+    .reduce((s, r) => s + advanceAmt(r), 0);
 
-  const displayUser      = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : "You";
-  const categoryIcon     = creator ? (CATEGORY_ICON[creator.category] ?? "🎯") : "🎨";
+  const displayUser  = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : "You";
+  const categoryIcon = creator ? (CATEGORY_ICON[creator.category] ?? "🎯") : "🎨";
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#FAF7F2" }}>
@@ -471,8 +499,10 @@ export default function CreatorDashboard() {
                         <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
                           <span style={{ fontSize: "1rem" }}>{OCCASION_ICONS[r.occasion_type ?? "Other"] ?? "🎪"}</span>
                           <div>
-                            <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1C1410", margin: "0 0 0.1rem" }}>{r.occasion_type ?? "Event"} · {fmtDate(r.event_date)}</p>
-                            <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: 0 }}>{r.location ?? "—"}</p>
+                            <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1C1410", margin: "0 0 0.1rem" }}>
+                              {r.requester_name ?? r.requester_phone} · {fmtDate(r.event_date)}
+                            </p>
+                            <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: 0 }}>{r.occasion_type ?? "Event"}{r.location ? ` · ${r.location}` : ""}</p>
                           </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
@@ -581,7 +611,6 @@ export default function CreatorDashboard() {
                 </div>
               </div>
 
-              {/* Confirmed jobs list with advance breakdown */}
               {confirmedReqs.length > 0 && (
                 <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "16px", padding: "1.5rem" }}>
                   <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.1rem", fontWeight: 700, color: "#1C1410", marginBottom: "1.25rem" }}>Confirmed Jobs</h2>
@@ -590,8 +619,10 @@ export default function CreatorDashboard() {
                       <div style={{ display: "flex", gap: "0.6rem", alignItems: "center" }}>
                         <span>{OCCASION_ICONS[r.occasion_type ?? "Other"] ?? "🎪"}</span>
                         <div>
-                          <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1C1410", margin: "0 0 0.1rem" }}>{r.occasion_type ?? "Event"} · {fmtDate(r.event_date)}</p>
-                          <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: 0 }}>{r.location ?? "—"}</p>
+                          <p style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1C1410", margin: "0 0 0.1rem" }}>
+                            {r.requester_name ?? r.requester_phone} · {fmtDate(r.event_date)}
+                          </p>
+                          <p style={{ fontSize: "0.72rem", color: "#9B7B60", margin: 0 }}>{r.occasion_type ?? "Event"}{r.location ? ` · ${r.location}` : ""}</p>
                         </div>
                       </div>
                       <div style={{ textAlign: "right" }}>

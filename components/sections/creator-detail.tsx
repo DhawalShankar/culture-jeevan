@@ -204,6 +204,7 @@ export default function CreatorDetail({ id }: { id: string }) {
   const sb = createClient();
   const { data } = await sb.from("booking_requests").insert({
     creator_id:      creator.id,
+    requester_id:    user!.id,        // ← add this to link request to user
     requester_phone: userPhone.trim(),
     occasion_type:   occasion,
     event_date:      eventDate,
