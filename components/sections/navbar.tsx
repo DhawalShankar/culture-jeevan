@@ -18,8 +18,9 @@ export default function Navbar() {
   const { signOut }        = useClerk();
   const bellRef            = useRef<HTMLButtonElement>(null);
 
+  // ✅ user?.id pass kiya — polling tabhi hogi jab user logged in ho
   const { items, unreadCount, loading, markAsRead, markAllAsRead } =
-    useNotifications(isLoaded && !!user);
+    useNotifications(isLoaded && !!user, user?.id ?? undefined);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -42,8 +43,6 @@ export default function Navbar() {
 
   const isActive = (href: string) => pathname === href;
 
-  // ── Icons ──────────────────────────────────────────────────────────────────
-
   const BellIcon = () => (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +51,6 @@ export default function Navbar() {
     </svg>
   );
 
-  // Bookmark/ticket icon for My Bookings
   const BookingsIcon = () => (
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
@@ -66,8 +64,6 @@ export default function Navbar() {
       <line x1="12" y1="18" x2="16" y2="18" />
     </svg>
   );
-
-  // ── Icon button styles ─────────────────────────────────────────────────────
 
   const iconBtnStyle = (active = false): React.CSSProperties => ({
     position: "relative",
@@ -87,8 +83,6 @@ export default function Navbar() {
   const iconHoverOn  = (el: HTMLElement) => { el.style.color = "#C4703A"; el.style.backgroundColor = "rgba(196,112,58,0.08)"; };
   const iconHoverOff = (el: HTMLElement) => { el.style.color = "#5C4A3A"; el.style.backgroundColor = "transparent"; };
 
-  // ── My Bookings button ─────────────────────────────────────────────────────
-
   const BookingsButton = () => (
     <Link
       href="/my-bookings"
@@ -100,8 +94,6 @@ export default function Navbar() {
       <BookingsIcon />
     </Link>
   );
-
-  // ── Bell button ────────────────────────────────────────────────────────────
 
   const BellButton = () => (
     <div style={{ position: "relative" }}>
@@ -130,8 +122,6 @@ export default function Navbar() {
       />
     </div>
   );
-
-  // ── Auth ───────────────────────────────────────────────────────────────────
 
   const AuthButton = () => {
     if (!isLoaded) return null;
@@ -238,8 +228,6 @@ export default function Navbar() {
     <div style={{ width: "1px", height: "20px", backgroundColor: "#E8DED0", margin: "0 0.3rem" }} />
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <nav style={{
       backgroundColor: "#FAF7F2",
@@ -253,7 +241,6 @@ export default function Navbar() {
         justifyContent: "space-between",
       }}>
 
-        {/* Logo */}
         <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
           <Image src="/logo.png" alt="CultureJeevan" width={52} height={52} style={{ objectFit: "contain" }} />
           <span style={{
@@ -265,7 +252,6 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
         {!isMobile && (
           <div style={{ display: "flex", gap: "0.15rem", alignItems: "center" }}>
             {NAV_LINKS.map((item) => {
@@ -304,7 +290,6 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* Mobile right cluster */}
         {isMobile && (
           <div style={{ display: "flex", alignItems: "center", gap: "0.15rem" }}>
             {isLoaded && user && (
@@ -313,8 +298,6 @@ export default function Navbar() {
                 <BookingsButton />
               </>
             )}
-
-            {/* Hamburger */}
             <button
               onClick={() => setOpen(!open)}
               style={{
@@ -343,7 +326,6 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Mobile dropdown */}
       {isMobile && open && (
         <div style={{
           backgroundColor: "#FAF7F2",
@@ -373,7 +355,6 @@ export default function Navbar() {
             );
           })}
 
-          {/* My Bookings in mobile menu too */}
           {isLoaded && user && (
             <Link
               href="/my-bookings"
@@ -400,7 +381,6 @@ export default function Navbar() {
   );
 }
 
-// ── Badge ───────────────────────────────────────────────────────────────────
 function Badge({ count }: { count: number }) {
   return (
     <span style={{

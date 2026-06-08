@@ -123,18 +123,25 @@ function PriceModal({ request, onClose, onSubmit }: {
   const valid     = !isNaN(parsed) && parsed > 0;
 
   async function submit() {
-    if (!valid) return;
-    setSaving(true);
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
-      });
-      onSubmit(request.id, parsed, Number(advancePct));
-      onClose();
-    } catch (e) { console.error("Accept failed", e); }
-    finally { setSaving(false); }
+  if (!valid) return;
+  setSaving(true);
+  
+  // ✅ Optimistically close modal + update parent instantly
+  onSubmit(request.id, parsed, Number(advancePct));
+  onClose();
+
+  try {
+    await fetch(`.../${request.id}/accept/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
+    });
+  } catch (e) {
+    console.error("Accept failed", e);
+    // Optional: rollback ya toast error show karo
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -329,12 +336,18 @@ export default function CreatorDashboard() {
   }, [creator?.id]);
 
   async function handleDecline(id: string) {
+    // ✅ Pehle UI update karo — turant
+    setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
+    
+    // Then API call background mein
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`, { method: "POST" });
-      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+      // Optional: rollback if API fails
+      setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "pending" } : r));
+    }
   }
-
   function handlePriceSubmit(id: string, price: number, pct: number) {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: pct } : r));
   }
