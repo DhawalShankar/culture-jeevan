@@ -197,23 +197,27 @@ export default function CreatorDetail({ id }: { id: string }) {
   }, [requestId]);
 
   async function handleSubmit() {
-    if (!creator || !userPhone) return;
-    setSubmitting(true);
-    const sb = createClient();
-    const { data } = await sb.from("booking_requests").insert({
-      creator_id:      creator.id,
-      requester_phone: userPhone.trim(),
-      occasion_type:   occasion,
-      event_date:      eventDate,
-      location:        location.trim(),
-      budget:          budget.trim() || null,
-      note:            note.trim() || null,
-      status:          "pending",
-    }).select("id").single();
-    setSubmitting(false);
-    setSubmitted(true);
-    if (data?.id) setRequestId(data.id);
-  }
+  if (!creator || !userPhone || submitting) return;
+  setSubmitting(true);
+  setSubmitted(true); // ← PEHLE set karo, await se pehle
+
+  const sb = createClient();
+  const { data } = await sb.from("booking_requests").insert({
+    creator_id:      creator.id,
+    requester_phone: userPhone.trim(),
+    occasion_type:   occasion,
+    event_date:      eventDate,
+    location:        location.trim(),
+    budget:          budget.trim() || null,
+    note:            note.trim() || null,
+    status:          "pending",
+  }).select("id").single();
+
+  setSubmitting(false);
+  if (data?.id) setRequestId(data.id);
+  // bookingReq null hai toh "pending" panel dikhega submitted=true se
+  setBookingReq({ id: data!.id, status: "pending", agreed_price: null, advance_percent: null, creator_id: creator.id });
+}
 
   async function handlePay() {
     if (!bookingReq?.agreed_price) return;

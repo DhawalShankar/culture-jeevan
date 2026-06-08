@@ -315,9 +315,12 @@ export default function CreatorDashboard() {
 
   const thisMonth        = new Date().getMonth();
   const thisYear         = new Date().getFullYear();
-  const monthCollected   = confirmedReqs
-    .filter(r => { const d = new Date(r.event_date); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })
-    .reduce((s, r) => s + advanceAmt(r), 0);
+  const monthCollected = confirmedReqs
+  .filter(r => { 
+    const d = new Date(r.created_at); 
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear; 
+  })
+  .reduce((s, r) => s + advanceAmt(r), 0);
 
   const displayUser      = user?.firstName ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` : "You";
   const categoryIcon     = creator ? (CATEGORY_ICON[creator.category] ?? "🎯") : "🎨";
