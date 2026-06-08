@@ -118,17 +118,22 @@ function PriceModal({
   const valid     = !isNaN(parsed) && parsed > 0;
 
   async function submit() {
-  if (!valid) return;
-  setSaving(true);
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
-  });
-  onSubmit(request.id, parsed, Number(advancePct));
-  setSaving(false);
-  onClose();
-}
+    if (!valid) return;
+    setSaving(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${request.id}/accept/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreed_price: parsed, advance_percent: Number(advancePct) }),
+      });
+      onSubmit(request.id, parsed, Number(advancePct));
+      onClose();
+    } catch (e) {
+      console.error("Accept failed", e);
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 999, background: "rgba(28,20,16,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}>
@@ -362,8 +367,6 @@ export default function CreatorDashboard() {
           }))
         );
 
-        // TODO: swap with Django API when ready
-        // GET /api/booking-requests/?creator_id=creatorRow.id
         const { data: requestRows } = await supabase
           .from("booking_requests")
           .select("id, occasion_type, event_date, location, budget, note, requester_phone, status, agreed_price, advance_percent, created_at")
@@ -393,22 +396,30 @@ export default function CreatorDashboard() {
   }, [creator?.id]);
 
   async function handleDecline(id: string) {
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`, {
-    method: "POST",
-  });
-  setBookingRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
-}
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/decline/`, {
+        method: "POST",
+      });
+      setBookingRequests(prev => prev.map(r => r.id === id ? { ...r, status: "declined" } : r));
+    } catch (e) {
+      console.error("Decline failed", e);
+    }
+  }
 
   async function handlePriceSubmit(id: string, price: number, advancePct: number) {
-  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/accept/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agreed_price: price, advance_percent: advancePct }),
-  });
-  setBookingRequests(prev => prev.map(r =>
-    r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: advancePct } : r
-  ));
-}
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/${id}/accept/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agreed_price: price, advance_percent: advancePct }),
+      });
+      setBookingRequests(prev => prev.map(r =>
+        r.id === id ? { ...r, status: "accepted", agreed_price: price, advance_percent: advancePct } : r
+      ));
+    } catch (e) {
+      console.error("Accept failed", e);
+    }
+  }
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "completed");
   const totalRevenue      = confirmedBookings.reduce((s, b) => s + b.total_amount, 0);
@@ -522,7 +533,6 @@ export default function CreatorDashboard() {
                 </div>
               </div>
 
-              {/* Pending requests alert */}
               {pendingRequests.length > 0 && (
                 <div style={{ background: "#FFF8E1", border: "1.5px solid #FFE082", borderRadius: "12px", padding: "0.875rem 1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
@@ -556,8 +566,6 @@ export default function CreatorDashboard() {
           {/* BOOKINGS */}
           {!loading && creator && activeNav === "bookings" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-
-              {/* Pending requests */}
               <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "16px", padding: "1.5rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
                   <div>
@@ -582,7 +590,6 @@ export default function CreatorDashboard() {
                   </div>
                 )}
 
-                {/* Recently handled */}
                 {handledRequests.length > 0 && (
                   <div style={{ marginTop: "1.25rem", paddingTop: "1.25rem", borderTop: "1px solid #E8DED0" }}>
                     <p style={{ fontSize: "0.65rem", fontWeight: 700, color: "#9B7B60", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.75rem" }}>Recently Handled</p>
@@ -610,7 +617,6 @@ export default function CreatorDashboard() {
                 )}
               </div>
 
-              {/* Confirmed bookings table */}
               <div style={{ backgroundColor: "#FFFFFF", border: "1px solid #E8DED0", borderRadius: "16px", padding: "1.5rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
                   <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.25rem", fontWeight: 700, color: "#1C1410" }}>All Bookings <span style={{ fontSize: "0.78rem", color: "#9B7B60", fontWeight: 500 }}>({bookings.length} total)</span></h2>
@@ -710,7 +716,6 @@ export default function CreatorDashboard() {
         </div>
       </div>
 
-      {/* Price modal */}
       {pricingReq && (
         <PriceModal
           request={pricingReq}

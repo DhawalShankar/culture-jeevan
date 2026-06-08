@@ -109,30 +109,32 @@ function NotFound() {
 export default function CreatorDetail({ id }: { id: string }) {
   const { user } = useUser();
 
-  const [creator,    setCreator]    = useState<Creator | null>(null);
-  const [profile,    setProfile]    = useState<Profile | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [notFound,   setNotFound]   = useState(false);
+  const [creator,       setCreator]       = useState<Creator | null>(null);
+  const [profile,       setProfile]       = useState<Profile | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [notFound,      setNotFound]      = useState(false);
 
-  const [eventDate,  setEventDate]  = useState("");
-  const [occasion,   setOccasion]   = useState("");
-  const [location,   setLocation]   = useState("");
-  const [budget,     setBudget]     = useState("");
-  const [note,       setNote]       = useState("");
-  const [phone,      setPhone]      = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [submitted,  setSubmitted]  = useState(false);
-  const [requestId,  setRequestId]  = useState<string | null>(null);
-  const [bookingReq, setBookingReq] = useState<BookingRequest | null>(null);
-  const [paying,     setPaying]     = useState(false);
+  const [eventDate,     setEventDate]     = useState("");
+  const [occasion,      setOccasion]      = useState("");
+  const [location,      setLocation]      = useState("");
+  const [budget,        setBudget]        = useState("");
+  const [note,          setNote]          = useState("");
+  const [phone,         setPhone]         = useState("");
+  const [submitting,    setSubmitting]    = useState(false);
+  const [submitted,     setSubmitted]     = useState(false);
+  const [requestId,     setRequestId]     = useState<string | null>(null);
+  const [bookingReq,    setBookingReq]    = useState<BookingRequest | null>(null);
+  const [paying,        setPaying]        = useState(false);
+  const [checkingExisting, setCheckingExisting] = useState(true);
 
   const today = new Date().toISOString().split("T")[0];
 
+  // Load creator + profile
   useEffect(() => {
     async function load() {
       const sb = createClient();
       const { data: c, error } = await sb.from("creators").select("*").eq("id", id).single();
-      if (error || !c) { setNotFound(true); setLoading(false); return; }
+      if (error || !c) { setNotFound(true); setLoading(false); setCheckingExisting(false); return; }
       setCreator(c);
       const { data: p } = await sb.from("profiles")
         .select("id, full_name, phone, city").eq("id", c.profile_id).single();
@@ -142,6 +144,7 @@ export default function CreatorDetail({ id }: { id: string }) {
     load();
   }, [id]);
 
+  // Fill phone from profile
   useEffect(() => {
     if (!user) return;
     async function fillPhone() {
@@ -152,6 +155,36 @@ export default function CreatorDetail({ id }: { id: string }) {
     fillPhone();
   }, [user]);
 
+  // Check if user already has an active request for this creator
+  useEffect(() => {
+    if (!creator || !phone || phone.length !== 10) {
+      setCheckingExisting(false);
+      return;
+    }
+    async function checkExisting() {
+      setCheckingExisting(true);
+      const sb = createClient();
+      const { data } = await sb
+        .from("booking_requests")
+        .select("id, status, agreed_price, advance_percent, creator_id")
+        .eq("creator_id", creator!.id)
+        .eq("requester_phone", phone.trim())
+        .in("status", ["pending", "accepted"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setBookingReq(data as BookingRequest);
+        setRequestId(data.id);
+        setSubmitted(true);
+      }
+      setCheckingExisting(false);
+    }
+    checkExisting();
+  }, [creator, phone]);
+
+  // Poll for status updates
   useEffect(() => {
     if (!requestId) return;
     const interval = setInterval(async () => {
@@ -218,8 +251,8 @@ export default function CreatorDetail({ id }: { id: string }) {
     rzp.open();
   }
 
-  if (loading)              return <Skeleton />;
-  if (notFound || !creator) return <NotFound />;
+  if (loading || checkingExisting) return <Skeleton />;
+  if (notFound || !creator)        return <NotFound />;
 
   const occasions  = (() => {
     const base = creator.occasion_types?.length ? creator.occasion_types : ALL_OCCASIONS;
@@ -230,8 +263,7 @@ export default function CreatorDetail({ id }: { id: string }) {
   const advanceAmt = bookingReq?.agreed_price
     ? Math.round((bookingReq.agreed_price * advancePct) / 100) : null;
 
-  // ── Right panel — inlined, NOT a sub-component, so no remount on state change ──
-
+  // ── Right panel ──
   const rightPanel = bookingReq?.status === "paid" ? (
     <div style={{ background: "#EFF6EE", border: "1px solid #C3E0BF", borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
       <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.6rem" }}>🎉</span>
@@ -244,7 +276,7 @@ export default function CreatorDetail({ id }: { id: string }) {
       </Link>
     </div>
 
-  ) : submitted && bookingReq?.status === "accepted" && bookingReq.agreed_price ? (
+  ) : bookingReq?.status === "accepted" && bookingReq.agreed_price ? (
     <div style={{ background: "#fff", border: `1.5px solid ${C.primary}`, borderRadius: "14px", padding: "1.5rem" }}>
       <p style={{ fontSize: "0.58rem", fontWeight: 700, color: C.primary, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.3rem" }}>Request Accepted ✓</p>
       <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.1rem", fontWeight: 900, color: C.dark, marginBottom: "0.75rem" }}>
@@ -268,7 +300,7 @@ export default function CreatorDetail({ id }: { id: string }) {
       </button>
     </div>
 
-  ) : submitted && bookingReq?.status === "declined" ? (
+  ) : bookingReq?.status === "declined" ? (
     <div style={{ background: "#FFF5F5", border: "1px solid #F5C6C6", borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
       <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.6rem" }}>😔</span>
       <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.1rem", fontWeight: 900, color: C.dark, marginBottom: "0.35rem" }}>Request Declined</h3>
@@ -278,25 +310,29 @@ export default function CreatorDetail({ id }: { id: string }) {
       </Link>
     </div>
 
-  ) : submitted ? (
+  ) : submitted && bookingReq?.status === "pending" ? (
     <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
       <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: C.cream, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.3rem", margin: "0 auto 0.75rem" }}>⏳</div>
       <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 900, color: C.dark, marginBottom: "0.35rem" }}>Request Sent!</h3>
-      <p style={{ fontSize: "0.82rem", color: C.muted, lineHeight: 1.65, marginBottom: "1rem" }}>
+      <p style={{ fontSize: "0.82rem", color: C.muted, lineHeight: 1.65, marginBottom: "0.6rem" }}>
         <strong style={{ color: C.dark }}>{profile?.full_name ?? "The creator"}</strong> will review and set a price within 24 hours. This page updates automatically.
       </p>
+      <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "8px", padding: "0.5rem 0.8rem", marginBottom: "1rem" }}>
+        <p style={{ fontSize: "0.72rem", color: "#8B4513", margin: 0, lineHeight: 1.6 }}>
+          🔒 You can only have one active request per creator. Come back here to pay once they set a price.
+        </p>
+      </div>
       <Link href="/my-bookings" style={{ display: "block", padding: "0.75rem", background: C.surface, color: C.dark, borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", textAlign: "center" }}>
         View My Bookings
       </Link>
     </div>
 
   ) : (
-    /* ── Booking form ── */
+    // Booking form — only shown when no active request exists
     <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.25rem", boxShadow: "0 2px 16px rgba(196,112,58,0.06)" }}>
       <p style={{ fontSize: "0.58rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.2rem" }}>Send a Booking Request</p>
       <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 900, color: C.dark, margin: "0 0 1rem" }}>Tell us about your event</h2>
 
-      {/* Date + Location */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem", marginBottom: "0.7rem" }}>
         <div>
           <label style={labelStyle}>Event Date *</label>
@@ -308,7 +344,6 @@ export default function CreatorDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* Occasion */}
       <div style={{ marginBottom: "0.7rem" }}>
         <label style={labelStyle}>Occasion *</label>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.28rem" }}>
@@ -320,7 +355,6 @@ export default function CreatorDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* Budget + Phone */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem", marginBottom: "0.7rem" }}>
         <div>
           <label style={labelStyle}>Budget (Optional)</label>
@@ -333,13 +367,11 @@ export default function CreatorDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* Note */}
       <div style={{ marginBottom: "0.85rem" }}>
         <label style={labelStyle}>Note (Optional)</label>
         <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Specific requirements, references, mood..." style={{ ...inputStyle, resize: "none", lineHeight: 1.55 }} onFocus={focusIn} onBlur={focusOut} />
       </div>
 
-      {/* Info */}
       <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "8px", padding: "0.5rem 0.8rem", marginBottom: "0.85rem" }}>
         <p style={{ fontSize: "0.72rem", color: "#8B4513", lineHeight: 1.6, margin: 0 }}>
           💳 <strong>No payment now.</strong> Creator sets the price after accepting — you pay then.
@@ -362,7 +394,6 @@ export default function CreatorDetail({ id }: { id: string }) {
 
       <div className="creator-layout" style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.25rem 1.5rem 3rem" }}>
 
-        {/* LEFT */}
         <div className="creator-left">
           <div style={{ display: "inline-flex", alignItems: "center", background: C.cream, border: "1px solid #F0DCC8", borderRadius: "100px", padding: "0.2rem 0.7rem", fontSize: "0.7rem", fontWeight: 700, color: C.primary, marginBottom: "0.5rem" }}>
             {creator.category}{creator.sub_category ? ` · ${creator.sub_category}` : ""}
@@ -412,7 +443,6 @@ export default function CreatorDetail({ id }: { id: string }) {
           ))}
         </div>
 
-        {/* RIGHT — inlined variable, no sub-component */}
         <div className="creator-right">
           {rightPanel}
         </div>
