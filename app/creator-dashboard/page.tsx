@@ -201,18 +201,24 @@ function PriceModal({ request, onClose, onSubmit }: {
 // ── Request Card ──────────────────────────────────────────────
 function RequestCard({ req, onAccept, onDecline }: { req: BookingRequest; onAccept: (r: BookingRequest) => void; onDecline: (id: string) => void; }) {
   const icon = OCCASION_ICONS[req.occasion_type ?? "Other"] ?? "🎪";
-  const displayName = req.requester_name ?? req.requester_phone;
   return (
     <div style={{ background: "#fff", border: "1px solid #E8DED0", borderRadius: "14px", padding: "1.1rem 1.25rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start" }}>
           <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "#FDF2E9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.25rem", flexShrink: 0 }}>{icon}</div>
           <div>
-            <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.15rem" }}>{displayName}</p>
-            <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>
-              {req.occasion_type ?? "Event"}
-              {req.requester_city ? ` · 📍 ${req.requester_city}` : ""}
-            </p>
+            <p style={{ fontSize: "0.9rem", fontWeight: 700, color: "#1C1410", margin: "0 0 0.15rem" }}>
+                {req.requester_name ?? req.requester_phone}
+              </p>
+              <p style={{ fontSize: "0.75rem", color: "#9B7B60", margin: 0 }}>
+                {req.requester_name && (
+                  <span style={{ color: "#C4703A", fontWeight: 600, marginRight: "0.5rem" }}>
+                    📞 {req.requester_phone}
+                  </span>
+                )}
+                {req.occasion_type ?? "Event"}
+                {req.requester_city ? ` · 📍 ${req.requester_city}` : ""}
+              </p>
           </div>
         </div>
         <span style={{ fontSize: "0.62rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", padding: "0.2rem 0.6rem", borderRadius: "100px", background: "#FFF8E1", color: "#F57F17" }}>New</span>
