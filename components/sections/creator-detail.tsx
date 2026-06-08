@@ -196,28 +196,42 @@ export default function CreatorDetail({ id }: { id: string }) {
     return () => clearInterval(interval);
   }, [requestId]);
 
-  async function handleSubmit() {
+async function handleSubmit() {
   if (!creator || !userPhone || submitting) return;
   setSubmitting(true);
-  setSubmitted(true); // ← PEHLE set karo, await se pehle
+  setSubmitted(true);
 
-  const sb = createClient();
-  const { data } = await sb.from("booking_requests").insert({
-    creator_id:      creator.id,
-    requester_id:    user!.id,        // ← add this to link request to user
-    requester_phone: userPhone.trim(),
-    occasion_type:   occasion,
-    event_date:      eventDate,
-    location:        location.trim(),
-    budget:          budget.trim() || null,
-    note:            note.trim() || null,
-    status:          "pending",
-  }).select("id").single();
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/booking-requests/create/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        creator_id:      creator.id,
+        requester_id:    user!.id,
+        requester_phone: userPhone.trim(),
+        occasion_type:   occasion,
+        event_date:      eventDate,
+        location:        location.trim(),
+        budget:          budget.trim() || null,
+        note:            note.trim() || null,
+      }),
+    }
+  );
 
+  const data = await res.json();
   setSubmitting(false);
-  if (data?.id) setRequestId(data.id);
-  // bookingReq null hai toh "pending" panel dikhega submitted=true se
-  setBookingReq({ id: data!.id, status: "pending", agreed_price: null, advance_percent: null, creator_id: creator.id });
+
+  if (data?.id) {
+    setRequestId(data.id);
+    setBookingReq({
+      id:              data.id,
+      status:          data.status ?? "pending",
+      agreed_price:    null,
+      advance_percent: null,
+      creator_id:      creator.id,
+    });
+  }
 }
 
   async function handlePay() {
