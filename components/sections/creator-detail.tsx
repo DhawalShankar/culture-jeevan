@@ -109,23 +109,24 @@ function NotFound() {
 export default function CreatorDetail({ id }: { id: string }) {
   const { user } = useUser();
 
-  const [creator,       setCreator]       = useState<Creator | null>(null);
-  const [profile,       setProfile]       = useState<Profile | null>(null);
-  const [loading,       setLoading]       = useState(true);
-  const [notFound,      setNotFound]      = useState(false);
+  const [creator,          setCreator]          = useState<Creator | null>(null);
+  const [profile,          setProfile]          = useState<Profile | null>(null);
+  const [loading,          setLoading]          = useState(true);
+  const [notFound,         setNotFound]         = useState(false);
+  const [userPhone,        setUserPhone]        = useState<string | null>(null);
+  const [phoneLoading,     setPhoneLoading]     = useState(true);
+  const [checkingExisting, setCheckingExisting] = useState(false);
 
-  const [eventDate,     setEventDate]     = useState("");
-  const [occasion,      setOccasion]      = useState("");
-  const [location,      setLocation]      = useState("");
-  const [budget,        setBudget]        = useState("");
-  const [note,          setNote]          = useState("");
-  const [phone,         setPhone]         = useState("");
-  const [submitting,    setSubmitting]    = useState(false);
-  const [submitted,     setSubmitted]     = useState(false);
-  const [requestId,     setRequestId]     = useState<string | null>(null);
-  const [bookingReq,    setBookingReq]    = useState<BookingRequest | null>(null);
-  const [paying,        setPaying]        = useState(false);
-  const [checkingExisting, setCheckingExisting] = useState(true);
+  const [eventDate,  setEventDate]  = useState("");
+  const [occasion,   setOccasion]   = useState("");
+  const [location,   setLocation]   = useState("");
+  const [budget,     setBudget]     = useState("");
+  const [note,       setNote]       = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted,  setSubmitted]  = useState(false);
+  const [requestId,  setRequestId]  = useState<string | null>(null);
+  const [bookingReq, setBookingReq] = useState<BookingRequest | null>(null);
+  const [paying,     setPaying]     = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -134,7 +135,7 @@ export default function CreatorDetail({ id }: { id: string }) {
     async function load() {
       const sb = createClient();
       const { data: c, error } = await sb.from("creators").select("*").eq("id", id).single();
-      if (error || !c) { setNotFound(true); setLoading(false); setCheckingExisting(false); return; }
+      if (error || !c) { setNotFound(true); setLoading(false); return; }
       setCreator(c);
       const { data: p } = await sb.from("profiles")
         .select("id, full_name, phone, city").eq("id", c.profile_id).single();
@@ -144,23 +145,21 @@ export default function CreatorDetail({ id }: { id: string }) {
     load();
   }, [id]);
 
-  // Fill phone from profile
+  // Fetch user's own phone from their profile
   useEffect(() => {
-    if (!user) return;
-    async function fillPhone() {
+    if (!user) { setPhoneLoading(false); return; }
+    async function fetchUserPhone() {
       const sb = createClient();
       const { data } = await sb.from("profiles").select("phone").eq("id", user!.id).single();
-      if (data?.phone) setPhone(data.phone);
+      setUserPhone(data?.phone ?? null);
+      setPhoneLoading(false);
     }
-    fillPhone();
+    fetchUserPhone();
   }, [user]);
 
   // Check if user already has an active request for this creator
   useEffect(() => {
-    if (!creator || !phone || phone.length !== 10) {
-      setCheckingExisting(false);
-      return;
-    }
+    if (!creator || !userPhone || userPhone.length !== 10) return;
     async function checkExisting() {
       setCheckingExisting(true);
       const sb = createClient();
@@ -168,7 +167,7 @@ export default function CreatorDetail({ id }: { id: string }) {
         .from("booking_requests")
         .select("id, status, agreed_price, advance_percent, creator_id")
         .eq("creator_id", creator!.id)
-        .eq("requester_phone", phone.trim())
+        .eq("requester_phone", userPhone!.trim())
         .in("status", ["pending", "accepted"])
         .order("created_at", { ascending: false })
         .limit(1)
@@ -182,7 +181,7 @@ export default function CreatorDetail({ id }: { id: string }) {
       setCheckingExisting(false);
     }
     checkExisting();
-  }, [creator, phone]);
+  }, [creator, userPhone]);
 
   // Poll for status updates
   useEffect(() => {
@@ -198,12 +197,12 @@ export default function CreatorDetail({ id }: { id: string }) {
   }, [requestId]);
 
   async function handleSubmit() {
-    if (!creator) return;
+    if (!creator || !userPhone) return;
     setSubmitting(true);
     const sb = createClient();
     const { data } = await sb.from("booking_requests").insert({
       creator_id:      creator.id,
-      requester_phone: phone.trim(),
+      requester_phone: userPhone.trim(),
       occasion_type:   occasion,
       event_date:      eventDate,
       location:        location.trim(),
@@ -243,7 +242,7 @@ export default function CreatorDetail({ id }: { id: string }) {
         });
         setBookingReq((prev) => prev ? { ...prev, status: "paid" } : prev);
       },
-      prefill: { contact: phone },
+      prefill: { contact: userPhone },
       theme:   { color: C.primary },
     };
     // @ts-ignore
@@ -251,20 +250,54 @@ export default function CreatorDetail({ id }: { id: string }) {
     rzp.open();
   }
 
-  if (loading || checkingExisting) return <Skeleton />;
-  if (notFound || !creator)        return <NotFound />;
+  if (loading || phoneLoading || checkingExisting) return <Skeleton />;
+  if (notFound || !creator) return <NotFound />;
 
   const occasions  = (() => {
     const base = creator.occasion_types?.length ? creator.occasion_types : ALL_OCCASIONS;
     return base.includes("Other") ? base : [...base, "Other"];
   })();
-  const isValid    = eventDate && occasion && location.trim().length > 1 && phone.trim().length === 10;
+
+  const hasPhone   = userPhone && userPhone.length === 10;
+  const isValid    = eventDate && occasion && location.trim().length > 1 && !!hasPhone;
   const advancePct = bookingReq?.advance_percent ?? creator.advance_percent ?? 50;
   const advanceAmt = bookingReq?.agreed_price
     ? Math.round((bookingReq.agreed_price * advancePct) / 100) : null;
 
+  // ── No phone in profile — block booking ──
+  const noPhonePanel = (
+    <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
+      <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.6rem" }}>📱</span>
+      <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 900, color: C.dark, marginBottom: "0.35rem" }}>Phone number required</h3>
+      <p style={{ fontSize: "0.82rem", color: C.muted, lineHeight: 1.65, marginBottom: "1rem" }}>
+        Add your phone number to your profile before sending a booking request. This ensures the creator can reach you and keeps your booking history consistent.
+      </p>
+      <Link href="/profile" style={{ display: "block", padding: "0.75rem", background: C.primary, color: "#FAF8F5", borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", textAlign: "center" }}>
+        Go to Profile → Add Phone
+      </Link>
+    </div>
+  );
+
+  // ── Not logged in ──
+  const notLoggedInPanel = (
+    <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
+      <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.6rem" }}>🔐</span>
+      <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 900, color: C.dark, marginBottom: "0.35rem" }}>Sign in to book</h3>
+      <p style={{ fontSize: "0.82rem", color: C.muted, lineHeight: 1.65, marginBottom: "1rem" }}>
+        Create a free account or sign in to send a booking request.
+      </p>
+      <Link href="/sign-in" style={{ display: "block", padding: "0.75rem", background: C.primary, color: "#FAF8F5", borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", textAlign: "center" }}>
+        Sign In / Sign Up →
+      </Link>
+    </div>
+  );
+
   // ── Right panel ──
-  const rightPanel = bookingReq?.status === "paid" ? (
+  const rightPanel = !user ? notLoggedInPanel
+
+  : !hasPhone ? noPhonePanel
+
+  : bookingReq?.status === "paid" ? (
     <div style={{ background: "#EFF6EE", border: "1px solid #C3E0BF", borderRadius: "14px", padding: "1.5rem", textAlign: "center" }}>
       <span style={{ fontSize: "1.75rem", display: "block", marginBottom: "0.6rem" }}>🎉</span>
       <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.1rem", fontWeight: 900, color: C.dark, marginBottom: "0.35rem" }}>Booking Confirmed!</h3>
@@ -319,7 +352,7 @@ export default function CreatorDetail({ id }: { id: string }) {
       </p>
       <div style={{ background: C.cream, border: "1px solid #F0DCC8", borderRadius: "8px", padding: "0.5rem 0.8rem", marginBottom: "1rem" }}>
         <p style={{ fontSize: "0.72rem", color: "#8B4513", margin: 0, lineHeight: 1.6 }}>
-          🔒 You can only have one active request per creator. Come back here to pay once they set a price.
+          🔒 One active request per creator. Come back here to pay once they set a price.
         </p>
       </div>
       <Link href="/my-bookings" style={{ display: "block", padding: "0.75rem", background: C.surface, color: C.dark, borderRadius: "9px", textDecoration: "none", fontWeight: 700, fontSize: "0.875rem", textAlign: "center" }}>
@@ -328,7 +361,7 @@ export default function CreatorDetail({ id }: { id: string }) {
     </div>
 
   ) : (
-    // Booking form — only shown when no active request exists
+    // Booking form
     <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: "14px", padding: "1.25rem", boxShadow: "0 2px 16px rgba(196,112,58,0.06)" }}>
       <p style={{ fontSize: "0.58rem", fontWeight: 700, color: C.subtle, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.2rem" }}>Send a Booking Request</p>
       <h2 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.05rem", fontWeight: 900, color: C.dark, margin: "0 0 1rem" }}>Tell us about your event</h2>
@@ -355,15 +388,17 @@ export default function CreatorDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.65rem", marginBottom: "0.7rem" }}>
-        <div>
-          <label style={labelStyle}>Budget (Optional)</label>
-          <input type="text" value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. ₹5k – ₹10k" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-        </div>
-        <div>
-          <label style={labelStyle}>Your Phone *</label>
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="10-digit number" maxLength={10} style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
-          {phone && phone.length < 10 && <p style={{ fontSize: "0.62rem", color: "#C0392B", marginTop: "0.2rem" }}>10 digits required</p>}
+      <div style={{ marginBottom: "0.7rem" }}>
+        <label style={labelStyle}>Budget (Optional)</label>
+        <input type="text" value={budget} onChange={e => setBudget(e.target.value)} placeholder="e.g. ₹5k – ₹10k" style={inputStyle} onFocus={focusIn} onBlur={focusOut} />
+      </div>
+
+      {/* Phone — readonly, from profile */}
+      <div style={{ marginBottom: "0.7rem" }}>
+        <label style={labelStyle}>Your Phone</label>
+        <div style={{ ...inputStyle, background: "#F5EFE7", color: C.muted, cursor: "not-allowed", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span>{userPhone}</span>
+          <Link href="/profile" style={{ fontSize: "0.65rem", color: C.primary, textDecoration: "none", fontWeight: 600 }}>Edit in profile →</Link>
         </div>
       </div>
 
